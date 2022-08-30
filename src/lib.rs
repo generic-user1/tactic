@@ -1,3 +1,3 @@
 
 pub mod gameboard;
-pub mod winner;
+pub mod game_outcome;

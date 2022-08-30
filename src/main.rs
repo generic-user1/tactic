@@ -1,5 +1,5 @@
 use tactic::gameboard::{GameBoard, BoardSpace, BoardSpaceLocation};
-use tactic::winner::GameOutcome;
+use tactic::game_outcome::GameOutcome;
 fn main() {
     let mut board = GameBoard::new();
     
