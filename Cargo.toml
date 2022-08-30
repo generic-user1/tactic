@@ -1,0 +1,13 @@
+[package]
+name = "tactic"
+version = "0.1.0"
+edition = "2021"
+description = "A terminal tic-tac-toe game with AI opponent"
+authors = ["generic-user1"]
+license = "MIT"
+keywords = ["tic tac toe", "tic-tac-toe", "noughts and crosses", "xs and os"]
+categories = ["command-line-utilities", "games"]
+
+[dependencies]
+
+crossterm = "0.25.0"
