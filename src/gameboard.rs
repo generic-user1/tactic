@@ -59,7 +59,7 @@ impl BoardSpaceLocation {
     /// 
     /// `(0,0)` corresponds to `TopLeft` and `(2,2)` corresponds
     /// to `BottomRight`.
-    pub fn as_coordinates(&self) -> (u8, u8)
+    pub const fn as_coordinates(&self) -> (u8, u8)
     {
         match self {
             Self::TopLeft => (0,0),
