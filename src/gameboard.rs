@@ -6,7 +6,7 @@ use std::fmt::{Display, Write};
 /// 
 /// A BoardSpace represents the three states a space on the tic-tac-toe
 /// game board can be in: occupied by an X, occupied by an O, or not occupied at all
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub enum BoardSpace {
     #[default]
     Empty,
@@ -263,7 +263,7 @@ impl Display for GameBoard {
 
         f.write_str(HORIZ_LINE)?;
 
-        f.write_fmt(format_args!(" {} | {} | {}\n",
+        f.write_fmt(format_args!(" {} | {} | {}",
             self.space(BoardSpaceLocation::BottomLeft),
             self.space(BoardSpaceLocation::BottomMiddle),
             self.space(BoardSpaceLocation::BottomRight)
