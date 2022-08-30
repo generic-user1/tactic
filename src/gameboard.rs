@@ -63,8 +63,8 @@ impl BoardSpaceLocation {
     {
         match self {
             Self::TopLeft => (0,0),
-            Self::TopMiddle => (1,0),
-            Self::TopRight => (2,0),
+            Self::TopMiddle => (0,1),
+            Self::TopRight => (0,2),
             Self::MiddleLeft => (1,0),
             Self::MiddleMiddle => (1,1),
             Self::MiddleRight => (1,2),
