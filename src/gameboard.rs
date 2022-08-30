@@ -59,7 +59,7 @@ impl BoardSpaceLocation {
     /// 
     /// `(0,0)` corresponds to `TopLeft` and `(2,2)` corresponds
     /// to `BottomRight`.
-    pub fn to_coordinates(&self) -> (u8, u8)
+    pub fn as_coordinates(&self) -> (u8, u8)
     {
         match self {
             Self::TopLeft => (0,0),
@@ -88,7 +88,7 @@ impl BoardSpaceLocation {
     pub fn from_coordinates((x, y): (u8, u8)) -> Self
     {
         for board_space_location in Self::all() {
-            if board_space_location.to_coordinates() == (x,y) {
+            if board_space_location.as_coordinates() == (x,y) {
                 return board_space_location;
             }
         }
@@ -139,13 +139,13 @@ impl GameBoard {
     /// Returns a reference to one of the board spaces
     pub fn space(&self, space_location: BoardSpaceLocation) -> &BoardSpace
     {
-        self.space_by_coordinates(space_location.to_coordinates())
+        self.space_by_coordinates(space_location.as_coordinates())
     }
 
     /// Returns a mutable reference to one of the board spaces
     pub fn space_mut(&mut self, space_location: BoardSpaceLocation) -> &mut BoardSpace
     {
-        self.space_by_coordinates_mut(space_location.to_coordinates())
+        self.space_by_coordinates_mut(space_location.as_coordinates())
     }
 
     /// Returns an iterator over all board spaces
