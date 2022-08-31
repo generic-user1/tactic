@@ -3,16 +3,20 @@
 use std::io::{stdout, Write};
 
 use crate::{
-    gameboard::{GameBoard, BoardSpaceLocation},
+    gameboard::{GameBoard, BoardSpaceLocation, BoardSpace},
     player_type::PlayerType,
     game_outcome::GameOutcome
 };
 use crossterm::{
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen, Clear, ClearType},
     style::Print,
+    event::{self, Event, KeyEvent, KeyCode, KeyModifiers},
     cursor::{self, MoveToNextLine, MoveToColumn, MoveToRow},
-    QueueableCommand
+    QueueableCommand, ExecutableCommand
 };
+
+const TERMSIZE_MIN_X: u16 = 11;
+const TERMSIZE_MIN_Y: u16 = 8;
 
 /// Struct used to manage the game UI
 /// 
@@ -94,9 +98,9 @@ impl UI{
             .queue(MoveToColumn(cursor_col))?
             
             .queue(MoveToRow(cursor_row))?
-            .queue(MoveToColumn(cursor_col))?
-            
-            .flush()
+            .queue(MoveToColumn(cursor_col))?;
+            Ok(())
+            //.flush()
     }
 
     /// Sets up the terminal for running the game
@@ -113,17 +117,19 @@ impl UI{
     /// Allows player X to claim one space, then allows player O to claim one space.
     /// Continues alternating between players until either the game is finished or a user
     /// quits the game.
-    pub fn game_loop(&self) -> crossterm::Result<GameOutcome>
+    pub fn game_loop(&self) -> crossterm::Result<(GameOutcome, GameBoard)>
     {
+        let (mut term_x, mut term_y) = terminal::size()?;
+
         if self.player_x == PlayerType::AI || self.player_o == PlayerType::AI{
             todo!("AI players not yet implemented");
         }
 
-        stdout()
-            .queue(Clear(ClearType::All))?
-            .queue(MoveToColumn(0))?
-            .queue(MoveToRow(0))?
-            .flush()?;
+        let mut cursor_x: u8 = 0;
+        let mut cursor_y: u8 = 0;
+
+
+        stdout().execute(Clear(ClearType::All))?;
 
         // if false, it's player x turn
         // if true, it's player o turn
@@ -134,21 +140,101 @@ impl UI{
         // keep playing game until game outcome is finished 
         //(or the loop is broken out of because a user chose to quit)
         while !game_outcome.game_finished(){
-            Self::draw_game(&game_board)?;
+            stdout()
+                .queue(Clear(ClearType::All))?
+                .queue(MoveToColumn(0))?
+                .queue(MoveToRow(0))?;
+            if term_x >= TERMSIZE_MIN_X && term_y >= TERMSIZE_MIN_Y {
+                Self::draw_game(&game_board)?;
+                stdout()
+                    .queue(MoveToRow(6))?
+                    .queue(Print(
+                        if player_o_turn {"O's turn"} else {"X's turn"}
+                    ))?
+                    .queue(MoveToRow(7))?.queue(MoveToColumn(0))?
+                    .queue(Print(
+                        "Use arrow keys to select space. Press Enter to place. Press q to quit."
+                    ))?
+                    // position cursor in the appropriate space
+                    .queue(MoveToColumn(((cursor_x as u16) * 4) + 1))?
+                    .queue(MoveToRow((cursor_y as u16) * 2))?
 
-            // input stuff here
+                    .flush()?;
+            } else {
+                stdout().execute(Print("Terminal too small! Please enlarge terminal"))?;
+            }
+
+            
+            match event::read()? {
+                Event::Key(key_event) => {
+                    match key_event {
+                        KeyEvent{code:KeyCode::Right, ..} => {
+                            if cursor_x < 2{
+                                cursor_x += 1;
+                            }
+                        },
+                        KeyEvent{code:KeyCode::Left, ..} => {
+                            if cursor_x > 0{
+                                cursor_x -= 1;
+                            }
+                        },
+                        KeyEvent{code:KeyCode::Down, ..} => {
+                            if cursor_y < 2 {
+                                cursor_y += 1;
+                            }
+                        },
+                        KeyEvent{code:KeyCode::Up, ..} => {
+                            if cursor_y > 0{
+                                cursor_y -= 1;
+                            }
+                        },
+                        KeyEvent{code:KeyCode::Enter, ..} => {
+
+                            let desired_location = 
+                                BoardSpaceLocation::from_coordinates((cursor_x, cursor_y));
+                            let desired_space = 
+                                game_board.space_mut(desired_location);
+                            
+                            // only update space and switch players if selected space is empty
+                            if desired_space == &BoardSpace::Empty {
+                                //write active player letter to this space
+                                *desired_space = if player_o_turn {
+                                    BoardSpace::O
+                                } else {
+                                    BoardSpace::X
+                                };
+                                //switch player
+                                player_o_turn = !player_o_turn;
+                                //reset cursor position
+                                cursor_x = 0;
+                                cursor_y = 0;
+                            }
+                        }
+                        KeyEvent{code:KeyCode::Char('q'), ..} => {
+                            break;
+                        },
+                        KeyEvent{code:KeyCode::Char('c'), modifiers:KeyModifiers::CONTROL, ..} => {
+                            break;
+                        }
+                        _ => {
+                            //ignore other KeyEvents
+                        }
+                    }
+                },
+                Event::Resize(new_x, new_y) =>
+                {
+                    term_x = new_x;
+                    term_y = new_y;
+                }
+                _ => {
+                    //ignore other Events
+                }
+            }
 
             game_outcome = GameOutcome::analyze_game(&game_board);
-            player_o_turn = !player_o_turn;
-
-            //TEMPORARY
-            game_outcome = GameOutcome::Draw;
-            std::thread::sleep(std::time::Duration::from_secs(5));
-            //END TEMPORARY
         }
 
-
-        Ok(game_outcome)
+        Ok((game_outcome, game_board))
     }
 
     /// Returns a reference to the [PlayerType] of the X player

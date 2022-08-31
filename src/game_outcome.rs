@@ -37,9 +37,6 @@ impl GameOutcome {
     /// should be identical.
     pub fn analyze_game(board: &GameBoard) -> GameOutcome
     {
-        // initialize a flag tracking the presence of empty spaces to false
-        // if any empty spaces are found, this will be set to true
-        let mut empty_spaces_present = false;
         for win_position in WinPosition::all(){
 
             //get iter over the BoardSpace in each position
@@ -56,7 +53,7 @@ impl GameOutcome {
 
             if is_winner{
                 match possible_winner {
-                    BoardSpace::Empty => {empty_spaces_present = true},
+                    BoardSpace::Empty => {/* do nothing */},
                     BoardSpace::X => {return GameOutcome::PlayerX(win_position);},
                     BoardSpace::O => {return GameOutcome::PlayerO(win_position);}
                 }
@@ -67,11 +64,13 @@ impl GameOutcome {
         // as all win positions have been checked and no winner was found.
         // The return value will now be Incomplete if empty spaces were found,
         // or Draw if no empty spaces were found (indicating no more possible moves)
-        if empty_spaces_present {
-            GameOutcome::Incomplete
-        } else {
-            GameOutcome::Draw
+        for (_, space) in board.all_spaces() {
+            match space {
+                BoardSpace::Empty => {return GameOutcome::Incomplete;},
+                _ => {}
+            }
         }
+        GameOutcome::Draw
     }
 
     /// Returns `true` if the game is finished
