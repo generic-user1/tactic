@@ -30,7 +30,13 @@ pub mod active_player{
         /// Switches this PlayerTurn to the opposite player
         pub fn switch(&mut self)
         {
-            *self = match self {
+            *self = self.opposite();
+        }
+
+        /// Returns the opposite `PlayerTurn`
+        pub fn opposite(&self) -> Self
+        {
+            match self {
                 ActivePlayer::PlayerO => ActivePlayer::PlayerX,
                 ActivePlayer::PlayerX => ActivePlayer::PlayerO
             }
