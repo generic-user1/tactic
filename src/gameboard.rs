@@ -122,7 +122,7 @@ impl BoardSpaceLocation {
 /// That is, represents a square divided into 9 equally sized square spaces.
 /// The state of each space is represented as a [BoardSpace].
 ///
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct GameBoard {
     board_state: [[BoardSpace; 3]; 3]
 }

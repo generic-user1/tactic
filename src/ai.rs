@@ -26,10 +26,7 @@ pub fn do_turn(board: &mut GameBoard, player: &ActivePlayer) -> bool
     for location in BoardSpaceLocation::all(){
         let space = board.space_mut(location);
         if space == &BoardSpace::Empty {
-            *space = match player {
-                ActivePlayer::PlayerX => BoardSpace::X,
-                ActivePlayer::PlayerO => BoardSpace::O
-            };
+            *space = player.get_board_space();
             return true;
         }
     }

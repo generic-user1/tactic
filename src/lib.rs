@@ -17,9 +17,11 @@ pub mod player_type {
 
 /// The ActivePlayer enum
 pub mod active_player{
+    use crate::gameboard::BoardSpace;
+
 
     /// Represents which player (X or O) is currently active
-    #[derive(PartialEq, Eq)]
+    #[derive(PartialEq, Eq, Clone)]
     pub enum ActivePlayer {
         PlayerX,
         PlayerO
@@ -40,6 +42,16 @@ pub mod active_player{
             match self {
                 ActivePlayer::PlayerO => 'O',
                 ActivePlayer::PlayerX => 'X'
+            }
+        }
+
+        /// Returns the [BoardSpace] variant associated
+        /// with this `ActivePlayer` variant
+        pub fn get_board_space(&self) -> BoardSpace
+        {
+            match self {
+                ActivePlayer::PlayerX => BoardSpace::X,
+                ActivePlayer::PlayerO => BoardSpace::O
             }
         }
     }
