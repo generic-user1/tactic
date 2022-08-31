@@ -6,7 +6,8 @@ use crate::{
     gameboard::{GameBoard, BoardSpaceLocation, BoardSpace},
     player_type::PlayerType,
     game_outcome::GameOutcome,
-    active_player::ActivePlayer
+    active_player::ActivePlayer,
+    ai
 };
 use crossterm::{
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen, Clear, ClearType},
@@ -95,10 +96,6 @@ impl UI{
     /// quits the game.
     pub fn game_loop(&mut self) -> crossterm::Result<GameOutcome>
     {
-        if self.player_x == PlayerType::AI || self.player_o == PlayerType::AI{
-            todo!("AI players not yet implemented");
-        }
-
         //update terminal size
         (self.terminal_x_size, self.terminal_y_size) = terminal::size()?;
         
@@ -145,7 +142,14 @@ impl UI{
                     .execute(Print("Terminal too small! Please enlarge terminal"))?;
             }
 
-            self.handle_next_event()?;
+            match self.active_player_type() {
+                PlayerType::Human => self.handle_next_event()?,
+                PlayerType::AI => {
+                    if ai::do_turn(&mut self.game_board, &self.active_player){
+                        self.switch_active_player();
+                    }
+                }
+            }
 
             game_outcome = self.game_board.game_outcome();
         }
@@ -390,6 +394,15 @@ impl UI{
         }
 
         Ok(())
+    }
+
+    /// Returns the PlayerType of the currently active player
+    fn active_player_type(&self) -> &PlayerType
+    {
+        match self.active_player{
+            ActivePlayer::PlayerO => &self.player_o,
+            ActivePlayer::PlayerX => &self.player_x
+        }
     }
 }
 

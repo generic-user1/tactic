@@ -2,6 +2,7 @@
 pub mod gameboard;
 pub mod game_outcome;
 pub mod ui;
+pub mod ai;
 
 /// The PlayerType enum
 pub mod player_type {
@@ -17,8 +18,8 @@ pub mod player_type {
 /// The ActivePlayer enum
 pub mod active_player{
 
-/// Represents which player (X or O) is currently active
-#[derive(PartialEq, Eq)]
+    /// Represents which player (X or O) is currently active
+    #[derive(PartialEq, Eq)]
     pub enum ActivePlayer {
         PlayerX,
         PlayerO
