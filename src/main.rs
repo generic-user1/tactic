@@ -2,11 +2,10 @@ use tactic::{ui::UI, game_outcome::GameOutcome};
 
 fn main() -> crossterm::Result<()>
 {
-    let ui = UI::default();
+    let mut ui = UI::default();
 
-    let (game_outcome, game_board) = ui.game_loop()?;
-    
-    drop(ui);
+    let game_outcome = ui.game_loop()?;
+    let game_board = ui.take_game_board();
 
     println!("{}", game_board);
     match game_outcome {

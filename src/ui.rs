@@ -20,12 +20,206 @@ const TERMSIZE_MIN_Y: u16 = 8;
 
 /// Struct used to manage the game UI
 /// 
-/// Manages setup and cleanup tasks.
+/// Manages setup and cleanup tasks, as well as storing game state
+/// (which player's turn is active, cursor position, etc.)
+/// 
+///# Notes
+/// 
+/// While an instance of this struct is in scope, the terminal will be in 'raw mode' (and
+/// in an alternate screen). This means that many things that operate on [std::io::stdout]
+/// will not work as expected (such as [println!]). 
+/// 
+/// To return the terminal to normal, the `UI` instance must be destroyed. 
+/// This can be done by calling [drop] on it it (e.g. `drop(ui_instance)`), 
+/// by using the [UI::take_game_board] method, or by allowing it to fall out of scope.
 pub struct UI{
     player_x: PlayerType,
-    player_o: PlayerType
+    player_o: PlayerType,
+    turn: PlayerTurn,
+    cursor_x_pos: u8,
+    cursor_y_pos: u8,
+    game_board: GameBoard
 }
+
 impl UI{
+    /// Sets up the terminal for running the game
+    /// 
+    /// Cleanup of the terminal is performed by the [Drop] implementation of this struct
+    pub fn new(player_x: PlayerType, player_o: PlayerType) -> crossterm::Result<Self>
+    {
+        Self::setup_terminal()?;
+        let new_instance = Self{
+            player_x,
+            player_o,
+            turn: PlayerTurn::PlayerX,
+            cursor_x_pos: 0,
+            cursor_y_pos: 0,
+            game_board: GameBoard::new()
+        };
+        Ok(new_instance)
+    }
+
+    /// Returns a reference to the [GameBoard] of this `UI`
+    /// 
+    /// Unlike [UI::take_game_board], this does not consume the `UI` instance.
+    /// If you are done with the `UI` instance when calling this function, consider
+    /// [UI::take_game_board] instead.
+    pub fn borrow_game_board(&self) -> &GameBoard
+    {
+        &self.game_board
+    }
+
+    /// Consumes this `UI` and returns the [GameBoard]
+    /// 
+    /// Unlike [UI::borrow_game_board], this consumes the `UI` instance. 
+    /// If you want to keep the `UI` instance, consider [UI::borrow_game_board] instead. 
+    pub fn take_game_board(mut self) -> GameBoard
+    {
+        let game_board = std::mem::take(&mut self.game_board);
+        drop(self);
+        game_board
+    }
+
+    /// The main game loop
+    ///
+    /// Allows player X to claim one space, then allows player O to claim one space.
+    /// Continues alternating between players until either the game is finished or a user
+    /// quits the game.
+    pub fn game_loop(&mut self) -> crossterm::Result<GameOutcome>
+    {
+        let (mut term_x, mut term_y) = terminal::size()?;
+
+        if self.player_x == PlayerType::AI || self.player_o == PlayerType::AI{
+            todo!("AI players not yet implemented");
+        }
+
+        self.reset_cursor_pos();
+
+        self.turn = PlayerTurn::PlayerX;
+
+        self.game_board = GameBoard::new();
+        let mut game_outcome = GameOutcome::analyze_game(&self.game_board);
+        
+        stdout().execute(Clear(ClearType::All))?;
+
+        // keep playing game until game outcome is finished 
+        //(or the loop is broken out of because a user chose to quit)
+        while !game_outcome.game_finished(){
+            stdout()
+                .queue(MoveToColumn(0))?
+                .queue(MoveToRow(0))?
+                .queue(cursor::Hide)?
+                .flush()?;
+            if term_x >= TERMSIZE_MIN_X && term_y >= TERMSIZE_MIN_Y {
+                self.draw_game()?;
+                stdout()
+                    .queue(MoveToRow(6))?
+                    .queue(Print(
+                        match self.turn{
+                            PlayerTurn::PlayerX => "X's turn",
+                            PlayerTurn::PlayerO => "O's turn"
+                        }
+                    ))?
+                    .queue(MoveToRow(7))?.queue(MoveToColumn(0))?
+                    .queue(Print(
+                        "Use arrow keys to select space. Press Enter to place. Press q to quit."
+                    ))?
+                    // position cursor in the appropriate space
+                    .queue(MoveToColumn(((self.cursor_x_pos as u16) * 4) + 1))?
+                    .queue(MoveToRow((self.cursor_y_pos as u16) * 2))?
+
+                    .queue(cursor::Show)?
+
+                    .flush()?;
+            } else {
+                stdout().execute(Print("Terminal too small! Please enlarge terminal"))?;
+            }
+
+            
+            match event::read()? {
+                Event::Key(key_event) => {
+                    match key_event {
+                        KeyEvent{code:KeyCode::Right, ..} => {
+                            if self.cursor_x_pos < 2{
+                                self.cursor_x_pos += 1;
+                            }
+                        },
+                        KeyEvent{code:KeyCode::Left, ..} => {
+                            if self.cursor_x_pos > 0{
+                                self.cursor_x_pos -= 1;
+                            }
+                        },
+                        KeyEvent{code:KeyCode::Down, ..} => {
+                            if self.cursor_y_pos < 2 {
+                                self.cursor_y_pos += 1;
+                            }
+                        },
+                        KeyEvent{code:KeyCode::Up, ..} => {
+                            if self.cursor_y_pos > 0{
+                                self.cursor_y_pos -= 1;
+                            }
+                        },
+                        KeyEvent{code:KeyCode::Enter, ..} => {
+
+                            let desired_location = 
+                                BoardSpaceLocation::from_coordinates(
+                                    (self.cursor_x_pos, self.cursor_y_pos)
+                                );
+                            let desired_space = 
+                                self.game_board.space_mut(desired_location);
+                            
+                            // only update space and switch players if selected space is empty
+                            if desired_space == &BoardSpace::Empty {
+                                //write active player letter to this space
+                                *desired_space = match self.turn {
+                                    PlayerTurn::PlayerX => BoardSpace::X,
+                                    PlayerTurn::PlayerO => BoardSpace::O
+                                };
+                                //switch player
+                                self.turn.switch();
+
+                                //reset cursor position
+                                self.reset_cursor_pos();
+                            }
+                        }
+                        KeyEvent{code:KeyCode::Char('q'), ..} => {
+                            break;
+                        },
+                        KeyEvent{code:KeyCode::Char('c'), modifiers:KeyModifiers::CONTROL, ..} => {
+                            break;
+                        }
+                        _ => {
+                            //ignore other KeyEvents
+                        }
+                    }
+                },
+                Event::Resize(new_x, new_y) =>
+                {
+                    term_x = new_x;
+                    term_y = new_y;
+                }
+                _ => {
+                    //ignore other Events
+                }
+            }
+
+            game_outcome = GameOutcome::analyze_game(&self.game_board);
+        }
+
+        Ok(game_outcome)
+    }
+
+    /// Returns a reference to the [PlayerType] of the X player
+    pub fn player_x(&self) -> &PlayerType
+    {
+        &self.player_x
+    }
+    
+    /// Returns a reference to the [PlayerType] of the O player
+    pub fn player_o(&self) -> &PlayerType
+    {
+        &self.player_o
+    }
 
     /// Performs setup tasks needed by the UI
     /// 
@@ -54,26 +248,26 @@ impl UI{
     /// Writes the game board's state to stdout
     /// 
     /// Causes no change in cursor position, as its position is reset after drawing.
-    fn draw_game(board: &GameBoard) -> crossterm::Result<()>
+    fn draw_game(&self) -> crossterm::Result<()>
     {   
         const HORIZ_LINE: &str = "-----------"; 
 
         let (cursor_col, cursor_row) = cursor::position()?;
 
         let top_row = format!(" {} | {} | {}",
-            board.space(BoardSpaceLocation::TopLeft),
-            board.space(BoardSpaceLocation::TopMiddle),
-            board.space(BoardSpaceLocation::TopRight)
+            self.game_board.space(BoardSpaceLocation::TopLeft),
+            self.game_board.space(BoardSpaceLocation::TopMiddle),
+            self.game_board.space(BoardSpaceLocation::TopRight)
         );
         let middle_row = format!(" {} | {} | {}",
-            board.space(BoardSpaceLocation::MiddleLeft),
-            board.space(BoardSpaceLocation::MiddleMiddle),
-            board.space(BoardSpaceLocation::MiddleRight)
+            self.game_board.space(BoardSpaceLocation::MiddleLeft),
+            self.game_board.space(BoardSpaceLocation::MiddleMiddle),
+            self.game_board.space(BoardSpaceLocation::MiddleRight)
         );
         let bottom_row = format!(" {} | {} | {}",
-            board.space(BoardSpaceLocation::BottomLeft),
-            board.space(BoardSpaceLocation::BottomMiddle),
-            board.space(BoardSpaceLocation::BottomRight)
+            self.game_board.space(BoardSpaceLocation::BottomLeft),
+            self.game_board.space(BoardSpaceLocation::BottomMiddle),
+            self.game_board.space(BoardSpaceLocation::BottomRight)
         );
         
         stdout()
@@ -100,168 +294,12 @@ impl UI{
             .queue(MoveToRow(cursor_row))?
             .queue(MoveToColumn(cursor_col))?;
             Ok(())
-            //.flush()
     }
 
-    /// Sets up the terminal for running the game
-    /// 
-    /// Cleanup of the terminal is performed by the [Drop] implementation of this struct
-    pub fn new(player_x: PlayerType, player_o: PlayerType) -> crossterm::Result<Self>
-    {
-        Self::setup_terminal()?;
-        Ok(Self{player_x, player_o})
-    }
-
-    /// The main game loop
-    ///
-    /// Allows player X to claim one space, then allows player O to claim one space.
-    /// Continues alternating between players until either the game is finished or a user
-    /// quits the game.
-    pub fn game_loop(&self) -> crossterm::Result<(GameOutcome, GameBoard)>
-    {
-        let (mut term_x, mut term_y) = terminal::size()?;
-
-        if self.player_x == PlayerType::AI || self.player_o == PlayerType::AI{
-            todo!("AI players not yet implemented");
-        }
-
-        let mut cursor_x: u8 = 0;
-        let mut cursor_y: u8 = 0;
-
-        // if false, it's player x turn
-        // if true, it's player o turn
-        let mut player_o_turn = false;
-
-        let mut game_board = GameBoard::new();
-        let mut game_outcome = GameOutcome::analyze_game(&game_board);
-        
-        stdout().execute(Clear(ClearType::All))?;
-
-        // keep playing game until game outcome is finished 
-        //(or the loop is broken out of because a user chose to quit)
-        while !game_outcome.game_finished(){
-            stdout()
-                .queue(MoveToColumn(0))?
-                .queue(MoveToRow(0))?
-                .queue(cursor::Hide)?
-                .flush()?;
-            if term_x >= TERMSIZE_MIN_X && term_y >= TERMSIZE_MIN_Y {
-                Self::draw_game(&game_board)?;
-                stdout()
-                    .queue(MoveToRow(6))?
-                    .queue(Print(
-                        if player_o_turn {"O's turn"} else {"X's turn"}
-                    ))?
-                    .queue(MoveToRow(7))?.queue(MoveToColumn(0))?
-                    .queue(Print(
-                        "Use arrow keys to select space. Press Enter to place. Press q to quit."
-                    ))?
-                    // position cursor in the appropriate space
-                    .queue(MoveToColumn(((cursor_x as u16) * 4) + 1))?
-                    .queue(MoveToRow((cursor_y as u16) * 2))?
-
-                    .queue(cursor::Show)?
-
-                    .flush()?;
-            } else {
-                stdout().execute(Print("Terminal too small! Please enlarge terminal"))?;
-            }
-
-            
-            match event::read()? {
-                Event::Key(key_event) => {
-                    match key_event {
-                        KeyEvent{code:KeyCode::Right, ..} => {
-                            if cursor_x < 2{
-                                cursor_x += 1;
-                            }
-                        },
-                        KeyEvent{code:KeyCode::Left, ..} => {
-                            if cursor_x > 0{
-                                cursor_x -= 1;
-                            }
-                        },
-                        KeyEvent{code:KeyCode::Down, ..} => {
-                            if cursor_y < 2 {
-                                cursor_y += 1;
-                            }
-                        },
-                        KeyEvent{code:KeyCode::Up, ..} => {
-                            if cursor_y > 0{
-                                cursor_y -= 1;
-                            }
-                        },
-                        KeyEvent{code:KeyCode::Enter, ..} => {
-
-                            let desired_location = 
-                                BoardSpaceLocation::from_coordinates((cursor_x, cursor_y));
-                            let desired_space = 
-                                game_board.space_mut(desired_location);
-                            
-                            // only update space and switch players if selected space is empty
-                            if desired_space == &BoardSpace::Empty {
-                                //write active player letter to this space
-                                *desired_space = if player_o_turn {
-                                    BoardSpace::O
-                                } else {
-                                    BoardSpace::X
-                                };
-                                //switch player
-                                player_o_turn = !player_o_turn;
-                                //reset cursor position
-                                cursor_x = 0;
-                                cursor_y = 0;
-                            }
-                        }
-                        KeyEvent{code:KeyCode::Char('q'), ..} => {
-                            break;
-                        },
-                        KeyEvent{code:KeyCode::Char('c'), modifiers:KeyModifiers::CONTROL, ..} => {
-                            break;
-                        }
-                        _ => {
-                            //ignore other KeyEvents
-                        }
-                    }
-                },
-                Event::Resize(new_x, new_y) =>
-                {
-                    term_x = new_x;
-                    term_y = new_y;
-                }
-                _ => {
-                    //ignore other Events
-                }
-            }
-
-            game_outcome = GameOutcome::analyze_game(&game_board);
-        }
-
-        Ok((game_outcome, game_board))
-    }
-
-    /// Returns a reference to the [PlayerType] of the X player
-    pub fn player_x(&self) -> &PlayerType
-    {
-        &self.player_x
-    }
-    
-    /// Returns a reference to the [PlayerType] of the O player
-    pub fn player_o(&self) -> &PlayerType
-    {
-        &self.player_o
-    }
-
-    /// Returns a mutable reference to the [PlayerType] of the X player
-    pub fn player_x_mut(&mut self) -> &mut PlayerType
-    {
-        &mut self.player_x
-    }
-    
-    /// Returns a mutable reference to the [PlayerType] of the O player
-    pub fn player_o_mut(&mut self) -> &mut PlayerType
-    {
-        &mut self.player_o
+    /// Resets cursor position to (0,0)
+    fn reset_cursor_pos(&mut self){
+        self.cursor_x_pos = 0;
+        self.cursor_y_pos = 0;
     }
 }
 
@@ -282,6 +320,21 @@ impl Default for UI {
         match Self::new(PlayerType::default(), PlayerType::default()){
             Ok(instance) => instance,
             Err(_) => panic!("failed to create default UI instance")
+        }
+    }
+}
+/// tracks whose turn it is
+enum PlayerTurn {
+    PlayerX,
+    PlayerO
+}
+impl PlayerTurn {
+    /// Switches this PlayerTurn to the opposite player
+    pub fn switch(&mut self)
+    {
+        *self = match self {
+            PlayerTurn::PlayerO => PlayerTurn::PlayerX,
+            PlayerTurn::PlayerX => PlayerTurn::PlayerO
         }
     }
 }
