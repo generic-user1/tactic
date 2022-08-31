@@ -13,3 +13,33 @@ pub mod player_type {
         AI
     }
 }
+
+/// The ActivePlayer enum
+pub mod active_player{
+
+/// Represents which player (X or O) is currently active
+#[derive(PartialEq, Eq)]
+    pub enum ActivePlayer {
+        PlayerX,
+        PlayerO
+    }
+    impl ActivePlayer {
+        /// Switches this PlayerTurn to the opposite player
+        pub fn switch(&mut self)
+        {
+            *self = match self {
+                ActivePlayer::PlayerO => ActivePlayer::PlayerX,
+                ActivePlayer::PlayerX => ActivePlayer::PlayerO
+            }
+        }
+
+        /// Returns the character representing this ActivePlayer
+        pub fn get_char(&self) -> char
+        {
+            match self {
+                ActivePlayer::PlayerO => 'O',
+                ActivePlayer::PlayerX => 'X'
+            }
+        }
+    }
+}

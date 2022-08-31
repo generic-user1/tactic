@@ -5,7 +5,8 @@ use std::io::{stdout, Write};
 use crate::{
     gameboard::{GameBoard, BoardSpaceLocation, BoardSpace},
     player_type::PlayerType,
-    game_outcome::GameOutcome
+    game_outcome::GameOutcome,
+    active_player::ActivePlayer
 };
 use crossterm::{
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen, Clear, ClearType},
@@ -411,31 +412,6 @@ impl Default for UI {
         match Self::new(PlayerType::default(), PlayerType::default()){
             Ok(instance) => instance,
             Err(_) => panic!("failed to create default UI instance")
-        }
-    }
-}
-/// tracks whose turn it is
-#[derive(PartialEq, Eq)]
-enum ActivePlayer {
-    PlayerX,
-    PlayerO
-}
-impl ActivePlayer {
-    /// Switches this PlayerTurn to the opposite player
-    pub fn switch(&mut self)
-    {
-        *self = match self {
-            ActivePlayer::PlayerO => ActivePlayer::PlayerX,
-            ActivePlayer::PlayerX => ActivePlayer::PlayerO
-        }
-    }
-
-    /// Returns the character representing this ActivePlayer
-    pub fn get_char(&self) -> char
-    {
-        match self {
-            ActivePlayer::PlayerO => 'O',
-            ActivePlayer::PlayerX => 'X'
         }
     }
 }
