@@ -111,20 +111,18 @@ impl UI{
                 .queue(MoveToColumn(0))?
                 .queue(MoveToRow(0))?
                 .flush()?;
+                
+            // only print game board if terminal is large enough
             if term_x >= TERMSIZE_MIN_X && term_y >= TERMSIZE_MIN_Y {
                 self.draw_game()?;
                 stdout()
                     .queue(MoveToRow(6))?
-                    .queue(Print(
-                        match self.active_player{
-                            ActivePlayer::PlayerX => "X's turn",
-                            ActivePlayer::PlayerO => "O's turn"
-                        }
-                    ))?
+                    .queue(Print(format!("{}'s turn", self.active_player.get_char())))?
                     .queue(MoveToRow(7))?.queue(MoveToColumn(0))?
-                    .queue(Print(
-                        "Use arrow keys to select space. Press Enter to place. Press q to quit."
-                    ))?
+                    .queue(Print(format!(
+                        "Use arrow keys to select space. Press 'Enter' or '{}' to place. Press q to quit.",
+                        self.active_player.get_char()
+                    )))?
                     // position cursor in the appropriate space
                     .queue(MoveToColumn(((self.cursor_x_pos as u16) * 4) + 1))?
                     .queue(MoveToRow((self.cursor_y_pos as u16) * 2))?
@@ -133,7 +131,9 @@ impl UI{
 
                     .flush()?;
             } else {
-                stdout().execute(Print("Terminal too small! Please enlarge terminal"))?;
+                // print error message instead of game board if terminal is too small
+                stdout()
+                    .execute(Print("Terminal too small! Please enlarge terminal"))?;
             }
 
             
@@ -188,6 +188,7 @@ impl UI{
                 Event::Resize(new_x, new_y) => {
                     term_x = new_x;
                     term_y = new_y;
+                    stdout().execute(Clear(ClearType::All))?;
                 }
                 _ => {
                     //ignore other Events
@@ -415,6 +416,15 @@ impl ActivePlayer {
         *self = match self {
             ActivePlayer::PlayerO => ActivePlayer::PlayerX,
             ActivePlayer::PlayerX => ActivePlayer::PlayerO
+        }
+    }
+
+    /// Returns the character representing this ActivePlayer
+    pub fn get_char(&self) -> char
+    {
+        match self {
+            ActivePlayer::PlayerO => 'O',
+            ActivePlayer::PlayerX => 'X'
         }
     }
 }
