@@ -112,7 +112,7 @@ impl UI{
 
         // keep playing game until game outcome is finished 
         // or exit flag is set (because user chose to quit)
-        while (!game_outcome.game_finished()) && (!self.exit_flag){
+        while !(game_outcome.game_finished() || self.exit_flag){
             stdout()
                 //hide the cursor while drawing game board
                 .queue(cursor::Hide)?
@@ -357,18 +357,14 @@ impl UI{
                     },
                     KeyEvent{code:KeyCode::Char('x'), ..} => {
                         //attempt to claim space if active player is X
-                        if self.active_player == ActivePlayer::PlayerX{
-                            if self.claim_space(){
-                                self.switch_active_player();
-                            }
+                        if self.active_player == ActivePlayer::PlayerX && self.claim_space(){
+                            self.switch_active_player();
                         }
                     },
                     KeyEvent{code:KeyCode::Char('o'), ..} => {
                         //attempt to claim space if active player is O
-                        if self.active_player == ActivePlayer::PlayerO{
-                            if self.claim_space(){
-                                self.switch_active_player();
-                            }
+                        if self.active_player == ActivePlayer::PlayerO && self.claim_space(){
+                            self.switch_active_player();
                         }
                     },
                     KeyEvent{code:KeyCode::Char('q'), ..} => {
