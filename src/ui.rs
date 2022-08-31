@@ -141,7 +141,8 @@ impl UI{
                 .queue(Clear(ClearType::All))?
                 .queue(MoveToColumn(0))?
                 .queue(MoveToRow(0))?
-                .queue(cursor::Hide)?;
+                .queue(cursor::Hide)?
+                .flush()?;
             if term_x >= TERMSIZE_MIN_X && term_y >= TERMSIZE_MIN_Y {
                 Self::draw_game(&game_board)?;
                 stdout()
