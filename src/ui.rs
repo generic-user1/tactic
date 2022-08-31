@@ -244,11 +244,11 @@ impl UI{
             Ok(())
     }
 
-    /// Resets cursor position to (0,0)
+    /// Resets cursor position to (1,1)
     fn reset_cursor_pos(&mut self)
     {
-        self.cursor_x_pos = 0;
-        self.cursor_y_pos = 0;
+        self.cursor_x_pos = 1;
+        self.cursor_y_pos = 1;
     }
 
     /// Move cursor to the right (positive x) if possible
