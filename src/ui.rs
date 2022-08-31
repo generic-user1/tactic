@@ -106,9 +106,10 @@ impl UI{
         //(or the loop is broken out of because a user chose to quit)
         while !game_outcome.game_finished(){
             stdout()
+                //hide the cursor while drawing game board
+                .queue(cursor::Hide)?
                 .queue(MoveToColumn(0))?
                 .queue(MoveToRow(0))?
-                .queue(cursor::Hide)?
                 .flush()?;
             if term_x >= TERMSIZE_MIN_X && term_y >= TERMSIZE_MIN_Y {
                 self.draw_game()?;
@@ -127,7 +128,7 @@ impl UI{
                     // position cursor in the appropriate space
                     .queue(MoveToColumn(((self.cursor_x_pos as u16) * 4) + 1))?
                     .queue(MoveToRow((self.cursor_y_pos as u16) * 2))?
-
+                    // show the cursor again
                     .queue(cursor::Show)?
 
                     .flush()?;
@@ -140,46 +141,21 @@ impl UI{
                 Event::Key(key_event) => {
                     match key_event {
                         KeyEvent{code:KeyCode::Right, ..} => {
-                            if self.cursor_x_pos < 2{
-                                self.cursor_x_pos += 1;
-                            }
+                            self.move_cursor_right();
                         },
                         KeyEvent{code:KeyCode::Left, ..} => {
-                            if self.cursor_x_pos > 0{
-                                self.cursor_x_pos -= 1;
-                            }
+                            self.move_cursor_left();
                         },
                         KeyEvent{code:KeyCode::Down, ..} => {
-                            if self.cursor_y_pos < 2 {
-                                self.cursor_y_pos += 1;
-                            }
+                            self.move_cursor_down();
                         },
                         KeyEvent{code:KeyCode::Up, ..} => {
-                            if self.cursor_y_pos > 0{
-                                self.cursor_y_pos -= 1;
-                            }
+                            self.move_cursor_up();
                         },
                         KeyEvent{code:KeyCode::Enter, ..} => {
-
-                            let desired_location = 
-                                BoardSpaceLocation::from_coordinates(
-                                    (self.cursor_x_pos, self.cursor_y_pos)
-                                );
-                            let desired_space = 
-                                self.game_board.space_mut(desired_location);
-                            
-                            // only update space and switch players if selected space is empty
-                            if desired_space == &BoardSpace::Empty {
-                                //write active player letter to this space
-                                *desired_space = match self.turn {
-                                    PlayerTurn::PlayerX => BoardSpace::X,
-                                    PlayerTurn::PlayerO => BoardSpace::O
-                                };
-                                //switch player
-                                self.turn.switch();
-
-                                //reset cursor position
-                                self.reset_cursor_pos();
+                            //attempt to claim space and switch turns if successful
+                            if self.claim_space(){
+                                self.change_turn();
                             }
                         }
                         KeyEvent{code:KeyCode::Char('q'), ..} => {
@@ -193,8 +169,7 @@ impl UI{
                         }
                     }
                 },
-                Event::Resize(new_x, new_y) =>
-                {
+                Event::Resize(new_x, new_y) => {
                     term_x = new_x;
                     term_y = new_y;
                 }
@@ -297,16 +272,103 @@ impl UI{
     }
 
     /// Resets cursor position to (0,0)
-    fn reset_cursor_pos(&mut self){
+    fn reset_cursor_pos(&mut self)
+    {
         self.cursor_x_pos = 0;
         self.cursor_y_pos = 0;
+    }
+
+    /// Move cursor to the right (positive x) if possible
+    /// 
+    /// Returns `true` if successful, `false` if not
+    fn move_cursor_right(&mut self) -> bool
+    {
+        if self.cursor_x_pos < 2{
+            self.cursor_x_pos += 1;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Move cursor to the left (negative x) if possible
+    /// 
+    /// Returns `true` if successful, `false` if not
+    fn move_cursor_left(&mut self) -> bool
+    {
+        if self.cursor_x_pos > 0{
+            self.cursor_x_pos -= 1;
+            true
+        } else {
+            false
+        }   
+    }
+
+    /// Move cursor downwards (positive y) if possible
+    /// 
+    /// Returns `true` if successful, `false` if not
+    fn move_cursor_down(&mut self) -> bool
+    {
+        if self.cursor_y_pos < 2{
+            self.cursor_y_pos += 1;
+            true
+        } else {
+            false
+        }   
+    }
+
+    /// Move cursor upwards (negative y) if possible
+    /// 
+    /// Returns `true` if successful, `false` if not
+    fn move_cursor_up(&mut self) -> bool
+    {
+        if self.cursor_y_pos > 0{
+            self.cursor_y_pos -= 1;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Claim the selected space for the active player if possible
+    /// 
+    /// Returns `true` if successful, `false` if not
+    fn claim_space(&mut self) -> bool
+    {
+        let desired_location = 
+            BoardSpaceLocation::from_coordinates((self.cursor_x_pos, self.cursor_y_pos));
+        let desired_space = 
+            self.game_board.space_mut(desired_location);
+        
+        // only update space and switch players if selected space is empty
+        if desired_space == &BoardSpace::Empty {
+            //write active player letter to this space
+            *desired_space = match self.turn {
+                PlayerTurn::PlayerX => BoardSpace::X,
+                PlayerTurn::PlayerO => BoardSpace::O
+            };
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Swaps the active player and resets cursor position
+    fn change_turn(&mut self) 
+    {
+        //switch player
+        self.turn.switch();
+
+        //reset cursor position
+        self.reset_cursor_pos();
     }
 }
 
 impl Drop for UI {
     /// Cleans up the terminal as this UI is dropped out of scope.
     /// [Read More](https://doc.rust-lang.org/1.62.1/core/ops/trait.Drop.html#tymethod.drop)
-    fn drop(&mut self) {
+    fn drop(&mut self) 
+    {
         if UI::cleanup_terminal().is_err(){
             panic!("Failed to cleanup terminal when dropping UI");
         }
@@ -316,7 +378,8 @@ impl Drop for UI {
 impl Default for UI {
     /// Sets up and returns an instance of UI with the default player types.
     /// [Read More](https://doc.rust-lang.org/1.62.1/core/default/trait.Default.html#tymethod.default)
-    fn default() -> Self {
+    fn default() -> Self 
+    {
         match Self::new(PlayerType::default(), PlayerType::default()){
             Ok(instance) => instance,
             Err(_) => panic!("failed to create default UI instance")
