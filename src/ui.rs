@@ -38,7 +38,10 @@ pub struct UI{
     active_player: ActivePlayer,
     cursor_x_pos: u8,
     cursor_y_pos: u8,
-    game_board: GameBoard
+    game_board: GameBoard,
+    terminal_x_size: u16,
+    terminal_y_size: u16,
+    exit_flag: bool
 }
 
 impl UI{
@@ -48,13 +51,17 @@ impl UI{
     pub fn new(player_x: PlayerType, player_o: PlayerType) -> crossterm::Result<Self>
     {
         Self::setup_terminal()?;
+        let (terminal_x_size, terminal_y_size) = terminal::size()?;
         let new_instance = Self{
             player_x,
             player_o,
             active_player: ActivePlayer::PlayerX,
             cursor_x_pos: 0,
             cursor_y_pos: 0,
-            game_board: GameBoard::new()
+            game_board: GameBoard::new(),
+            terminal_x_size,
+            terminal_y_size,
+            exit_flag: false
         };
         Ok(new_instance)
     }
@@ -87,12 +94,13 @@ impl UI{
     /// quits the game.
     pub fn game_loop(&mut self) -> crossterm::Result<GameOutcome>
     {
-        let (mut term_x, mut term_y) = terminal::size()?;
-
         if self.player_x == PlayerType::AI || self.player_o == PlayerType::AI{
             todo!("AI players not yet implemented");
         }
 
+        //update terminal size
+        (self.terminal_x_size, self.terminal_y_size) = terminal::size()?;
+        
         self.reset_cursor_pos();
 
         self.active_player = ActivePlayer::PlayerX;
@@ -103,17 +111,17 @@ impl UI{
         stdout().execute(Clear(ClearType::All))?;
 
         // keep playing game until game outcome is finished 
-        //(or the loop is broken out of because a user chose to quit)
-        while !game_outcome.game_finished(){
+        // or exit flag is set (because user chose to quit)
+        while (!game_outcome.game_finished()) && (!self.exit_flag){
             stdout()
                 //hide the cursor while drawing game board
                 .queue(cursor::Hide)?
                 .queue(MoveToColumn(0))?
                 .queue(MoveToRow(0))?
                 .flush()?;
-                
+
             // only print game board if terminal is large enough
-            if term_x >= TERMSIZE_MIN_X && term_y >= TERMSIZE_MIN_Y {
+            if self.terminal_x_size >= TERMSIZE_MIN_X && self.terminal_y_size >= TERMSIZE_MIN_Y {
                 self.draw_game()?;
                 stdout()
                     .queue(MoveToRow(6))?
@@ -136,64 +144,7 @@ impl UI{
                     .execute(Print("Terminal too small! Please enlarge terminal"))?;
             }
 
-            
-            match event::read()? {
-                Event::Key(key_event) => {
-                    match key_event {
-                        KeyEvent{code:KeyCode::Right, ..} => {
-                            self.move_cursor_right();
-                        },
-                        KeyEvent{code:KeyCode::Left, ..} => {
-                            self.move_cursor_left();
-                        },
-                        KeyEvent{code:KeyCode::Down, ..} => {
-                            self.move_cursor_down();
-                        },
-                        KeyEvent{code:KeyCode::Up, ..} => {
-                            self.move_cursor_up();
-                        },
-                        KeyEvent{code:KeyCode::Enter, ..} => {
-                            //attempt to claim space and switch turns if successful
-                            if self.claim_space(){
-                                self.switch_active_player();
-                            }
-                        },
-                        KeyEvent{code:KeyCode::Char('x'), ..} => {
-                            //attempt to claim space if active player is X
-                            if self.active_player == ActivePlayer::PlayerX{
-                                if self.claim_space(){
-                                    self.switch_active_player();
-                                }
-                            }
-                        },
-                        KeyEvent{code:KeyCode::Char('o'), ..} => {
-                            //attempt to claim space if active player is O
-                            if self.active_player == ActivePlayer::PlayerO{
-                                if self.claim_space(){
-                                    self.switch_active_player();
-                                }
-                            }
-                        },
-                        KeyEvent{code:KeyCode::Char('q'), ..} => {
-                            break;
-                        },
-                        KeyEvent{code:KeyCode::Char('c'), modifiers:KeyModifiers::CONTROL, ..} => {
-                            break;
-                        }
-                        _ => {
-                            //ignore other KeyEvents
-                        }
-                    }
-                },
-                Event::Resize(new_x, new_y) => {
-                    term_x = new_x;
-                    term_y = new_y;
-                    stdout().execute(Clear(ClearType::All))?;
-                }
-                _ => {
-                    //ignore other Events
-                }
-            }
+            self.handle_next_event()?;
 
             game_outcome = GameOutcome::analyze_game(&self.game_board);
         }
@@ -378,6 +329,70 @@ impl UI{
 
         //reset cursor position
         self.reset_cursor_pos();
+    }
+
+    /// Blocks until a [crossterm::event::Event] is available, then handles it
+    fn handle_next_event(&mut self) -> crossterm::Result<()>
+    {
+        match event::read()? {
+            Event::Key(key_event) => {
+                match key_event {
+                    KeyEvent{code:KeyCode::Right, ..} => {
+                        self.move_cursor_right();
+                    },
+                    KeyEvent{code:KeyCode::Left, ..} => {
+                        self.move_cursor_left();
+                    },
+                    KeyEvent{code:KeyCode::Down, ..} => {
+                        self.move_cursor_down();
+                    },
+                    KeyEvent{code:KeyCode::Up, ..} => {
+                        self.move_cursor_up();
+                    },
+                    KeyEvent{code:KeyCode::Enter, ..} => {
+                        //attempt to claim space and switch turns if successful
+                        if self.claim_space(){
+                            self.switch_active_player();
+                        }
+                    },
+                    KeyEvent{code:KeyCode::Char('x'), ..} => {
+                        //attempt to claim space if active player is X
+                        if self.active_player == ActivePlayer::PlayerX{
+                            if self.claim_space(){
+                                self.switch_active_player();
+                            }
+                        }
+                    },
+                    KeyEvent{code:KeyCode::Char('o'), ..} => {
+                        //attempt to claim space if active player is O
+                        if self.active_player == ActivePlayer::PlayerO{
+                            if self.claim_space(){
+                                self.switch_active_player();
+                            }
+                        }
+                    },
+                    KeyEvent{code:KeyCode::Char('q'), ..} => {
+                        self.exit_flag = true;
+                    },
+                    KeyEvent{code:KeyCode::Char('c'), modifiers:KeyModifiers::CONTROL, ..} => {
+                        self.exit_flag = true;
+                    }
+                    _ => {
+                        //ignore other KeyEvents
+                    }
+                }
+            },
+            Event::Resize(new_x, new_y) => {
+                self.terminal_x_size = new_x;
+                self.terminal_y_size = new_y;
+                stdout().execute(Clear(ClearType::All))?;
+            }
+            _ => {
+                //ignore other Events
+            }
+        }
+
+        Ok(())
     }
 }
 
