@@ -1,6 +1,7 @@
 //! Representation of a tic-tac-toe game board
 
 use std::fmt::{Display, Write};
+use crate::game_outcome::GameOutcome;
 
 /// The state of a single space on a game board
 /// 
@@ -241,6 +242,14 @@ impl GameBoard {
     pub fn as_string(&self) -> String
     {
         format!("{}", self)
+    }
+
+    /// Returns the [GameOutcome] of this board
+    /// 
+    /// Convinence method for `GameOutcome::analyze_game(&board)`
+    pub fn game_outcome(&self) -> GameOutcome
+    {
+        GameOutcome::analyze_game(&self)
     }
 }
 

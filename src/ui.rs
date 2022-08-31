@@ -107,7 +107,7 @@ impl UI{
         self.active_player = ActivePlayer::PlayerX;
 
         self.game_board = GameBoard::new();
-        let mut game_outcome = GameOutcome::analyze_game(&self.game_board);
+        let mut game_outcome = self.game_board.game_outcome();
         
         stdout().execute(Clear(ClearType::All))?;
 
@@ -147,7 +147,7 @@ impl UI{
 
             self.handle_next_event()?;
 
-            game_outcome = GameOutcome::analyze_game(&self.game_board);
+            game_outcome = self.game_board.game_outcome();
         }
 
         Ok(game_outcome)
