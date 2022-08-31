@@ -35,7 +35,7 @@ const TERMSIZE_MIN_Y: u16 = 8;
 pub struct UI{
     player_x: PlayerType,
     player_o: PlayerType,
-    turn: PlayerTurn,
+    active_player: ActivePlayer,
     cursor_x_pos: u8,
     cursor_y_pos: u8,
     game_board: GameBoard
@@ -51,7 +51,7 @@ impl UI{
         let new_instance = Self{
             player_x,
             player_o,
-            turn: PlayerTurn::PlayerX,
+            active_player: ActivePlayer::PlayerX,
             cursor_x_pos: 0,
             cursor_y_pos: 0,
             game_board: GameBoard::new()
@@ -95,7 +95,7 @@ impl UI{
 
         self.reset_cursor_pos();
 
-        self.turn = PlayerTurn::PlayerX;
+        self.active_player = ActivePlayer::PlayerX;
 
         self.game_board = GameBoard::new();
         let mut game_outcome = GameOutcome::analyze_game(&self.game_board);
@@ -116,9 +116,9 @@ impl UI{
                 stdout()
                     .queue(MoveToRow(6))?
                     .queue(Print(
-                        match self.turn{
-                            PlayerTurn::PlayerX => "X's turn",
-                            PlayerTurn::PlayerO => "O's turn"
+                        match self.active_player{
+                            ActivePlayer::PlayerX => "X's turn",
+                            ActivePlayer::PlayerO => "O's turn"
                         }
                     ))?
                     .queue(MoveToRow(7))?.queue(MoveToColumn(0))?
@@ -155,9 +155,25 @@ impl UI{
                         KeyEvent{code:KeyCode::Enter, ..} => {
                             //attempt to claim space and switch turns if successful
                             if self.claim_space(){
-                                self.change_turn();
+                                self.switch_active_player();
                             }
-                        }
+                        },
+                        KeyEvent{code:KeyCode::Char('x'), ..} => {
+                            //attempt to claim space if active player is X
+                            if self.active_player == ActivePlayer::PlayerX{
+                                if self.claim_space(){
+                                    self.switch_active_player();
+                                }
+                            }
+                        },
+                        KeyEvent{code:KeyCode::Char('o'), ..} => {
+                            //attempt to claim space if active player is O
+                            if self.active_player == ActivePlayer::PlayerO{
+                                if self.claim_space(){
+                                    self.switch_active_player();
+                                }
+                            }
+                        },
                         KeyEvent{code:KeyCode::Char('q'), ..} => {
                             break;
                         },
@@ -343,9 +359,9 @@ impl UI{
         // only update space and switch players if selected space is empty
         if desired_space == &BoardSpace::Empty {
             //write active player letter to this space
-            *desired_space = match self.turn {
-                PlayerTurn::PlayerX => BoardSpace::X,
-                PlayerTurn::PlayerO => BoardSpace::O
+            *desired_space = match self.active_player {
+                ActivePlayer::PlayerX => BoardSpace::X,
+                ActivePlayer::PlayerO => BoardSpace::O
             };
             true
         } else {
@@ -353,11 +369,11 @@ impl UI{
         }
     }
 
-    /// Swaps the active player and resets cursor position
-    fn change_turn(&mut self) 
+    /// Switches the active player and resets cursor position
+    fn switch_active_player(&mut self) 
     {
         //switch player
-        self.turn.switch();
+        self.active_player.switch();
 
         //reset cursor position
         self.reset_cursor_pos();
@@ -387,17 +403,18 @@ impl Default for UI {
     }
 }
 /// tracks whose turn it is
-enum PlayerTurn {
+#[derive(PartialEq, Eq)]
+enum ActivePlayer {
     PlayerX,
     PlayerO
 }
-impl PlayerTurn {
+impl ActivePlayer {
     /// Switches this PlayerTurn to the opposite player
     pub fn switch(&mut self)
     {
         *self = match self {
-            PlayerTurn::PlayerO => PlayerTurn::PlayerX,
-            PlayerTurn::PlayerX => PlayerTurn::PlayerO
+            ActivePlayer::PlayerO => ActivePlayer::PlayerX,
+            ActivePlayer::PlayerX => ActivePlayer::PlayerO
         }
     }
 }
