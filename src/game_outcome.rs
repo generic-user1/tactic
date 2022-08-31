@@ -65,9 +65,8 @@ impl GameOutcome {
         // The return value will now be Incomplete if empty spaces were found,
         // or Draw if no empty spaces were found (indicating no more possible moves)
         for (_, space) in board.all_spaces() {
-            match space {
-                BoardSpace::Empty => {return GameOutcome::Incomplete;},
-                _ => {}
+            if space == &BoardSpace::Empty {
+                return GameOutcome::Incomplete;
             }
         }
         GameOutcome::Draw
