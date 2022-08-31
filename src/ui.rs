@@ -128,9 +128,6 @@ impl UI{
         let mut cursor_x: u8 = 0;
         let mut cursor_y: u8 = 0;
 
-
-        stdout().execute(Clear(ClearType::All))?;
-
         // if false, it's player x turn
         // if true, it's player o turn
         let mut player_o_turn = false;
@@ -143,7 +140,8 @@ impl UI{
             stdout()
                 .queue(Clear(ClearType::All))?
                 .queue(MoveToColumn(0))?
-                .queue(MoveToRow(0))?;
+                .queue(MoveToRow(0))?
+                .queue(cursor::Hide)?;
             if term_x >= TERMSIZE_MIN_X && term_y >= TERMSIZE_MIN_Y {
                 Self::draw_game(&game_board)?;
                 stdout()
@@ -158,6 +156,8 @@ impl UI{
                     // position cursor in the appropriate space
                     .queue(MoveToColumn(((cursor_x as u16) * 4) + 1))?
                     .queue(MoveToRow((cursor_y as u16) * 2))?
+
+                    .queue(cursor::Show)?
 
                     .flush()?;
             } else {
