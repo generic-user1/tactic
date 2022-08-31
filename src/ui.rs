@@ -134,11 +134,13 @@ impl UI{
 
         let mut game_board = GameBoard::new();
         let mut game_outcome = GameOutcome::analyze_game(&game_board);
+        
+        stdout().execute(Clear(ClearType::All))?;
+
         // keep playing game until game outcome is finished 
         //(or the loop is broken out of because a user chose to quit)
         while !game_outcome.game_finished(){
             stdout()
-                .queue(Clear(ClearType::All))?
                 .queue(MoveToColumn(0))?
                 .queue(MoveToRow(0))?
                 .queue(cursor::Hide)?
