@@ -141,7 +141,7 @@ impl PossibleMove{
                 sub_move.win_score}
             ).sum();
             
-            //de-emphasize distant moves by halvin
+            //de-emphasize distant moves by halving
             (total_wins/(sub_move_count as f64)) * 0.5
         } else {
             match board.game_outcome() {
