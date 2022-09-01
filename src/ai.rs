@@ -1,9 +1,11 @@
 //! Utilities for AI player
 
-use crate::game_outcome::GameOutcome;
-use crate::gameboard::{GameBoard, BoardSpaceLocation, BoardSpace};
-use crate::active_player::ActivePlayer;
-
+use crate::{
+    game_outcome::GameOutcome,
+    gameboard::{GameBoard, BoardSpaceLocation, BoardSpace},
+    active_player::ActivePlayer
+};
+use rand::Rng;
 /// Represents an AI player
 #[derive(Debug, PartialEq)]
 pub struct AiPlayer{
@@ -14,7 +16,7 @@ impl AiPlayer{
     
     /// Construct and return a new `AiPlayer` at the specified difficulty
     /// 
-    /// `difficulty` is a value within the range `(0.0, 1.0]` that represents
+    /// `difficulty` is a value within the range `[0.0, 1.0]` that represents
     /// the difficulty of the AI player. `1.0` is the maximum difficulty.
     /// 
     ///# Panics
@@ -30,7 +32,7 @@ impl AiPlayer{
 
     /// Set the difficulty of this `AiPlayer`
     /// 
-    /// `difficulty` is a value within the range `(0.0, 1.0]` that represents
+    /// `difficulty` is a value within the range `[0.0, 1.0]` that represents
     /// the difficulty of the AI player. `1.0` is the maximum difficulty.
     /// 
     ///# Panics
@@ -39,7 +41,7 @@ impl AiPlayer{
     /// or if difficulty is greater than 1.
     pub fn set_difficulty(&mut self, difficulty:f64)
     {
-        if difficulty <= 0.0 || difficulty > 1.0 {
+        if difficulty < 0.0 || difficulty > 1.0 || difficulty.is_nan(){
             panic!("Provided difficulty of {} is outside the difficulty range of (0.0,1.0]", 
                 difficulty);
         }
@@ -49,10 +51,27 @@ impl AiPlayer{
 
     /// Returns the difficulty of this `AiPlayer`
     /// 
-    /// The difficulty will always be within the range`(0.0, 1.0]`
+    /// The difficulty will always be within the range `(0.0, 1.0]`
     pub fn difficulty(&self) -> f64
     {
         self.difficulty
+    }
+
+    /// Returns the mistake chance of this `AiPlayer`
+    /// 
+    /// The mistake chance is the chance (from 0 to 1) that on any given turn,
+    /// this `AiPlayer` will make a `mistake` and select a non-optimal move.
+    /// How non-optimal this move is depends on the difficulty (lower difficulty means less optimal).
+    /// 
+    /// The mistake chance is a function of the difficulty; more specifically `mistake_chance = 1 - difficulty`.
+    /// This means that a higher difficulty results in a lower mistake chance (and vice versa). A difficulty of `1.0`
+    /// results in a mistake chance of `0.0`.
+    /// 
+    /// The mistake chance will always be within the range `[0.0, 1.0]`.
+    pub fn mistake_chance(&self) -> f64
+    {
+        // return the mistake chance with bounds checking to ensure value is within valid range
+        (1.0 - self.difficulty).min(1.0).max(0.0)
     }
 
     /// Plays a turn on the specified game board
@@ -74,15 +93,12 @@ impl AiPlayer{
             return Err(AiError::GameFinished);
         }
 
-        // Clone the input board which gives us a mutable board from an immutable board
-        let mut new_board = board.clone();
-
-
+        // generate possible moves
         let mut possible_moves: Vec<PossibleMove> = Vec::new();
         for location in BoardSpaceLocation::all(){
-            if new_board.space(location) == &BoardSpace::Empty {
+            if board.space(location) == &BoardSpace::Empty {
                 possible_moves.push(PossibleMove::new(
-                    &new_board, 
+                    board, 
                     location, 
                     player, 
                     player
@@ -90,28 +106,51 @@ impl AiPlayer{
             }
         }
 
-        let mut top_win_score = 0.0;
-        let mut top_win_move: Option<&PossibleMove> = None;
-        for possible_move in possible_moves.iter(){
-            if top_win_move.is_none(){
-                top_win_score = possible_move.win_score();
-                top_win_move = Some(possible_move);
-            } else {
-                let new_win_score = possible_move.win_score();
-                if new_win_score > top_win_score{
-                    top_win_score = new_win_score;
-                    top_win_move = Some(possible_move);
-                }
-            }
+        // return if there are no possible moves found
+        if possible_moves.is_empty() {
+            return Err(AiError::NoMovesFound);
         }
 
-        match top_win_move {
-            Some(next_move) => {
-                let new_location = *next_move.new_location();
-                *new_board.space_mut(new_location) = player.get_board_space();
-            },
-            None => {return Err(AiError::NoMovesFound);}
-        }
+        // sort possible moves by win score (lowest to highest)
+        possible_moves.sort_by(|move_a, move_b|{
+            match move_a.win_score().partial_cmp(&move_b.win_score()){
+                Some(ordering) => ordering,
+                None => std::cmp::Ordering::Equal // assume equality if no ordering exists
+            }
+        });
+        
+        //cache the rng as it will be used more than once
+        let mut rng = rand::thread_rng();
+
+        // generate a number from 0 to (not including) 1
+        // if the mistake chance is greater than this value, do mistake; otherwise play optimally
+        // 1.0 mistake chance is always greater than generated value
+        // 0.0 mistake chance is always less than or equal to (thus not greater than) generated value
+        let do_mistake = self.mistake_chance() > rng.gen_range(0.0..1.0);
+        
+        // determine next move 
+        let next_move = if do_mistake {
+            // pick non-optimal move by scaling difficulty to length of possible_moves
+            // rounding down means we never pick the last move unless it's the only move
+            let move_index = (self.difficulty * (possible_moves.len() as f64)) as usize;
+            match possible_moves.get(move_index){
+                Some(pmove) => pmove,
+                None => {
+                    //get first move in this case, which must exist because we already returned if possible moves was empty
+                    possible_moves.first().unwrap()
+                }
+            }
+        } else {
+            // play optimally if do_mistake is false
+            possible_moves.last().unwrap()
+        };
+
+        // Clone the input board; this gets a new, mutable board to play move on
+        let mut new_board = board.clone();
+
+        // play next move and return modified board
+        let new_location = *next_move.new_location();
+        *new_board.space_mut(new_location) = player.get_board_space();
         Ok(new_board)
     }
 }

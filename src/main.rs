@@ -9,7 +9,7 @@ use tactic::{
 fn main() -> crossterm::Result<()>
 {
     let player_x = PlayerType::Human;
-    let player_o = PlayerType::AI(AiPlayer::new(1.0));
+    let player_o = PlayerType::AI(AiPlayer::new(0.5));
 
     let mut ui = UI::new(player_x, player_o)?;
 

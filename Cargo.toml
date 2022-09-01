@@ -11,3 +11,4 @@ categories = ["command-line-utilities", "games"]
 [dependencies]
 
 crossterm = "0.25.0"
+rand = "0.8.5"

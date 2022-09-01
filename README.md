@@ -7,3 +7,4 @@ Play tic-tac-toe (a.k.a. "noughts and crosses" or "Xs and Os") in the terminal a
 ## Dependencies
 
 - [crossterm](https://github.com/crossterm-rs/crossterm)
+- [rand](https://github.com/rust-random/rand)
