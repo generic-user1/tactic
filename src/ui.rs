@@ -23,6 +23,9 @@ mod event_handling;
 //game related impl's for the UI struct
 mod game;
 
+//declare menu module which contains
+//menu related impl's for the UI struct
+mod menu;
 /// Struct used to manage the game UI
 /// 
 /// Manages setup and cleanup tasks, as well as storing game state
@@ -46,7 +49,10 @@ pub struct UI{
     game_board: GameBoard,
     terminal_x_size: u16,
     terminal_y_size: u16,
-    exit_flag: bool
+    exit_flag: bool,
+    player_x_score: u32,
+    player_o_score: u32,
+    number_of_draws: u32
 }
 
 impl UI{
@@ -66,7 +72,10 @@ impl UI{
             game_board: GameBoard::new(),
             terminal_x_size,
             terminal_y_size,
-            exit_flag: false
+            exit_flag: false,
+            player_x_score: 0,
+            player_o_score: 0,
+            number_of_draws: 0
         };
         Ok(new_instance)
     }
@@ -102,6 +111,29 @@ impl UI{
     pub fn player_o(&self) -> &PlayerType
     {
         &self.player_o
+    }
+
+    /// Returns the score (number of games won) of the X player
+    pub fn player_x_score(&self) -> u32
+    {
+        self.player_x_score
+    }
+
+    /// Returns the score (number of games won) of the O player
+    pub fn player_o_score(&self) -> u32
+    {
+        self.player_o_score
+    }
+
+    pub fn number_of_draws(&self) -> u32
+    {
+        self.number_of_draws
+    }
+
+    /// Returns the total number of games played
+    pub fn number_of_games(&self) -> u32
+    {
+        self.player_x_score + self.player_o_score + self.number_of_draws
     }
 
     /// Performs setup tasks needed by the UI

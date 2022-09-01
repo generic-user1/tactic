@@ -4,23 +4,38 @@ fn main() -> crossterm::Result<()>
 {
     let mut ui = UI::new(PlayerType::Human, PlayerType::AI)?;
 
-    let game_outcome = ui.game_loop()?;
-    let game_board = ui.take_game_board();
-
-    println!("{}", game_board);
-    match game_outcome {
-        GameOutcome::Incomplete => {
-           println!("Game exited"); 
-        },
-        GameOutcome::Draw => {
-            println!("Result: Draw");
-        },
-        GameOutcome::PlayerO(_) => {
-            println!("Result: O wins!");
-        },
-        GameOutcome::PlayerX(_) => {
-            println!("Result: X wins!");
+    loop {
+        if ui.game_loop()? == GameOutcome::Incomplete || !ui.play_again_menu()? {
+            break;
         }
-    }
+    };
+
+    let player_x_score = ui.player_x_score();
+    let player_o_score = ui.player_o_score();
+    let number_of_draws = ui.number_of_draws();
+    let number_of_games = ui.number_of_games();
+    let final_game_board = ui.take_game_board();
+
+    println!("{}", final_game_board);
+    println!("X score:     {}\t({:.2}%)", player_x_score, 
+        if number_of_games != 0 {
+            ((player_x_score as f64)/(number_of_games as f64))*100.0
+        } else {
+            0.0
+        });
+    println!("O score:     {}\t({:.2}%)", player_o_score, 
+        if number_of_games != 0 {
+            ((player_o_score as f64)/(number_of_games as f64))*100.0
+        } else {
+            0.0
+        });
+    println!("Draws:       {}\t({:.2}%)", number_of_draws,
+        if number_of_games != 0 {
+            ((number_of_draws as f64)/(number_of_games as f64))*100.0
+        } else {
+            0.0    
+        });
+    println!("Total Games: {}", number_of_games);
+    
     Ok(())
 }

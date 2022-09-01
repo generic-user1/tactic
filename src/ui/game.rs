@@ -85,13 +85,28 @@ impl super::UI{
             game_outcome = self.game_board.game_outcome();
         }
 
+        match game_outcome {
+            GameOutcome::PlayerX(_) => {
+                self.player_x_score +=1;
+            },
+            GameOutcome::PlayerO(_) => {
+                self.player_o_score +=1;
+            },
+            GameOutcome::Draw => {
+                self.number_of_draws +=1;
+            }
+            GameOutcome::Incomplete => {
+                //do nothing
+            }
+        }
+
         Ok(game_outcome)
     }
 
     /// Writes the game board's state to stdout
     /// 
     /// Causes no change in cursor position, as its position is reset after drawing.
-    fn draw_game(&self) -> crossterm::Result<()>
+    pub(crate) fn draw_game(&self) -> crossterm::Result<()>
     {   
         const HORIZ_LINE: &str = "-----------"; 
 

@@ -14,7 +14,7 @@ mod win_position_constants;
 /// 
 /// The `Incomplete` variant represents that neither player has won, but that there
 /// are still moves that can be played.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum GameOutcome{
     PlayerX(WinPosition),
     PlayerO(WinPosition),
@@ -93,7 +93,7 @@ impl GameOutcome {
 /// 
 /// The [GameOutcome::analyze_game] function will check each win position in the order
 /// that `WinPosition` variants are defined.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum WinPosition {
     TopRow,
     MiddleRow,
