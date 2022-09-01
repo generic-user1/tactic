@@ -14,7 +14,7 @@ use crate::{
     game_outcome::GameOutcome,
     gameboard::{GameBoard, BoardSpaceLocation},
     player_type::PlayerType,
-    ai
+    ai::AiError
 };
 
 impl super::UI{
@@ -71,9 +71,17 @@ impl super::UI{
 
             match self.active_player_type() {
                 PlayerType::Human => self.handle_next_event()?,
-                PlayerType::AI => {
-                    if ai::do_turn(&mut self.game_board, &self.active_player){
-                        self.switch_active_player();
+                PlayerType::AI(ai_player) => {
+                    match ai_player.do_turn(&self.game_board, &self.active_player){
+                        Ok(new_board) =>{
+                            self.game_board = new_board;
+                            self.switch_active_player();
+                        },
+                        Err(ai_error) => {
+                            if ai_error == AiError::NoMovesFound{
+                                panic!("No moves found despite game not being finished");
+                            }
+                        }
                     }
                 }
             }

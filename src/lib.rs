@@ -6,12 +6,15 @@ pub mod ai;
 
 /// The PlayerType enum
 pub mod player_type {
+
+    use crate::ai::AiPlayer;
+
     /// Represents the type of a player (either human or AI)
-    #[derive(Default, Debug, PartialEq, Eq)]
+    #[derive(Default, Debug, PartialEq)]
     pub enum PlayerType {
         #[default]
         Human,
-        AI
+        AI(AiPlayer)
     }
 }
 

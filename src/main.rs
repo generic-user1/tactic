@@ -2,12 +2,16 @@ use tactic::{
     ui::UI, 
     game_outcome::GameOutcome, 
     player_type::PlayerType, 
-    active_player::ActivePlayer
+    active_player::ActivePlayer,
+    ai::AiPlayer
 };
 
 fn main() -> crossterm::Result<()>
 {
-    let mut ui = UI::new(PlayerType::Human, PlayerType::AI)?;
+    let player_x = PlayerType::Human;
+    let player_o = PlayerType::AI(AiPlayer::new(1.0));
+
+    let mut ui = UI::new(player_x, player_o)?;
 
     loop {
         let game_outcome = ui.game_loop()?;

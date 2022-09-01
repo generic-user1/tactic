@@ -5,6 +5,7 @@ use crate::gameboard::{GameBoard, BoardSpaceLocation, BoardSpace};
 use crate::active_player::ActivePlayer;
 
 /// Represents an AI player
+#[derive(Debug, PartialEq)]
 pub struct AiPlayer{
     difficulty: f64
 }
@@ -54,6 +55,65 @@ impl AiPlayer{
         self.difficulty
     }
 
+    /// Plays a turn on the specified game board
+    /// 
+    /// Which turn to play (player X or player O) is determined by `player`
+    /// 
+    /// `board` is the [GameBoard] to play on. 
+    /// 
+    /// If a move can be played successfully, this method will return `Ok(new_board)`
+    /// where `new_board` is the given [GameBoard] after the AI has played its turn.
+    /// 
+    /// If a move cannot be played (for example, because the game is finished), this method
+    /// will return `Err(AiError)` with an appropriate [AiError] describing the issue.
+    pub fn do_turn(&self, board: &GameBoard, player: &ActivePlayer) -> Result<GameBoard, AiError>
+    {
+
+        // return early if game is already finished
+        if board.game_outcome().game_finished(){
+            return Err(AiError::GameFinished);
+        }
+
+        // Clone the input board which gives us a mutable board from an immutable board
+        let mut new_board = board.clone();
+
+
+        let mut possible_moves: Vec<PossibleMove> = Vec::new();
+        for location in BoardSpaceLocation::all(){
+            if new_board.space(location) == &BoardSpace::Empty {
+                possible_moves.push(PossibleMove::new(
+                    &new_board, 
+                    location, 
+                    player, 
+                    player
+                ));
+            }
+        }
+
+        let mut top_win_score = 0.0;
+        let mut top_win_move: Option<&PossibleMove> = None;
+        for possible_move in possible_moves.iter(){
+            if top_win_move.is_none(){
+                top_win_score = possible_move.win_score();
+                top_win_move = Some(possible_move);
+            } else {
+                let new_win_score = possible_move.win_score();
+                if new_win_score > top_win_score{
+                    top_win_score = new_win_score;
+                    top_win_move = Some(possible_move);
+                }
+            }
+        }
+
+        match top_win_move {
+            Some(next_move) => {
+                let new_location = *next_move.new_location();
+                *new_board.space_mut(new_location) = player.get_board_space();
+            },
+            None => {return Err(AiError::NoMovesFound);}
+        }
+        Ok(new_board)
+    }
 }
 
 impl Default for AiPlayer{
@@ -62,59 +122,13 @@ impl Default for AiPlayer{
     }
 }
 
-
-
-/// Plays a turn on the specified game board
-/// 
-/// Which turn to play (player X or player O) is determined by `player`
-/// 
-/// `board` is the [GameBoard] to play on. The board is modified in-place.
-/// 
-/// If a turn is played correctly, the function will return `true`.
-/// If a turn cannot be played (because, for example, the game is finished),
-/// the function will return `false`. 
-pub fn do_turn(board: &mut GameBoard, player: &ActivePlayer) -> bool
-{
-    // return early if game is already finished
-    if board.game_outcome().game_finished(){
-        return false;
-    }
-
-    let mut possible_moves: Vec<PossibleMove> = Vec::new();
-    for location in BoardSpaceLocation::all(){
-        if board.space(location) == &BoardSpace::Empty {
-            possible_moves.push(PossibleMove::new(
-                board, 
-                location, 
-                player, 
-                player
-            ));
-        }
-    }
-
-    let mut top_win_score = 0.0;
-    let mut top_win_move: Option<&PossibleMove> = None;
-    for possible_move in possible_moves.iter(){
-        if top_win_move.is_none(){
-            top_win_score = possible_move.win_score();
-            top_win_move = Some(possible_move);
-        } else {
-            let new_win_score = possible_move.win_score();
-            if new_win_score > top_win_score{
-                top_win_score = new_win_score;
-                top_win_move = Some(possible_move);
-            }
-        }
-    }
-
-    match top_win_move {
-        Some(next_move) => {
-            let new_location = *next_move.new_location();
-            *board.space_mut(new_location) = player.get_board_space();
-        },
-        None => panic!("Couldn't find a valid move!")
-    }
-    true
+/// Reasons why a turn may fail
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum AiError{
+    /// The provided [GameBoard] was already finished, and no more moves are possible
+    GameFinished,
+    /// The provided [GameBoard] was not finished, but no valid moves could be found
+    NoMovesFound
 }
 
 #[derive(Clone)]
