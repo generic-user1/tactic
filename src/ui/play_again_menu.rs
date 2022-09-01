@@ -1,4 +1,4 @@
-//! UI implementations for menus
+//! UI implementations for the post-game menu
 
 use std::io::{stdout, Write};
 use crossterm::{

@@ -20,9 +20,14 @@ mod event_handling;
 //game related impl's for the UI struct
 mod game;
 
-//declare menu module which contains
-//menu related impl's for the UI struct
+//declare play_again_menu module which contains
+//post-game menu impl's for the UI struct
 mod play_again_menu;
+
+//declare setup_menu module which contains
+//pre-game menu impl's for the UI struct
+mod setup_menu;
+
 /// Struct used to manage the game UI
 /// 
 /// Manages setup and cleanup tasks, as well as storing game state
