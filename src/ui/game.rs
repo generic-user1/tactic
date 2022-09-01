@@ -11,7 +11,6 @@ use crossterm::{
 };
 
 use crate::{
-    active_player::ActivePlayer,
     game_outcome::GameOutcome,
     gameboard::{GameBoard, BoardSpaceLocation},
     player_type::PlayerType,
@@ -30,8 +29,6 @@ impl super::UI{
         (self.terminal_x_size, self.terminal_y_size) = terminal::size()?;
         
         self.reset_cursor_pos();
-
-        self.active_player = ActivePlayer::PlayerX;
 
         self.game_board = GameBoard::new();
         let mut game_outcome = self.game_board.game_outcome();

@@ -1,12 +1,27 @@
-use tactic::{ui::UI, game_outcome::GameOutcome, player_type::PlayerType};
+use tactic::{
+    ui::UI, 
+    game_outcome::GameOutcome, 
+    player_type::PlayerType, 
+    active_player::ActivePlayer
+};
 
 fn main() -> crossterm::Result<()>
 {
     let mut ui = UI::new(PlayerType::Human, PlayerType::AI)?;
 
     loop {
-        if ui.game_loop()? == GameOutcome::Incomplete || !ui.play_again_menu()? {
+        let game_outcome = ui.game_loop()?;
+        if game_outcome == GameOutcome::Incomplete || !ui.play_again_menu()? {
             break;
+        } else {
+            match game_outcome {
+                GameOutcome::PlayerX(_) => {*ui.active_player_mut() = ActivePlayer::PlayerO},
+                GameOutcome::PlayerO(_) => {*ui.active_player_mut() = ActivePlayer::PlayerX},
+                _ => {
+                    // do nothing if neither player won
+                    // the active player will flip-flop naturally
+                }
+            }
         }
     };
 

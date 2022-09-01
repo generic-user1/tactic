@@ -138,6 +138,18 @@ impl UI{
         self.player_x_score + self.player_o_score + self.number_of_draws
     }
 
+    /// Returns a reference to the currently active player
+    pub fn active_player(&self) -> &ActivePlayer
+    {
+        &self.active_player
+    }
+
+    /// Returns a mutable reference to the currently active player
+    pub fn active_player_mut(&mut self) -> &mut ActivePlayer
+    {
+        &mut self.active_player
+    }
+
     /// Performs setup tasks needed by the UI
     /// 
     /// Called by the constructor of this struct
