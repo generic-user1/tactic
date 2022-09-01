@@ -110,7 +110,7 @@ impl super::UI{
             
             .queue(MoveToNextLine(2))?
             .queue(MoveToColumn(0))?
-            .queue(Print("Play again? Press y or Enter for yes; Press q or n for no"))?
+            .queue(Print("Play again? Press y or Enter for yes; Press q or n for no "))?
             .flush()?;
         Ok(())
     }

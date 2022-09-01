@@ -22,7 +22,7 @@ mod game;
 
 //declare menu module which contains
 //menu related impl's for the UI struct
-mod menu;
+mod play_again_menu;
 /// Struct used to manage the game UI
 /// 
 /// Manages setup and cleanup tasks, as well as storing game state
