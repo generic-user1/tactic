@@ -125,6 +125,7 @@ impl UI{
         self.player_o_score
     }
 
+    /// Returns the number of games that resulted in a draw
     pub fn number_of_draws(&self) -> u32
     {
         self.number_of_draws
