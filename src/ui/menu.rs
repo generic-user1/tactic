@@ -20,7 +20,7 @@ impl super::UI{
     /// and choose whether to play another game.
     /// 
     /// Returns `true` if user chooses to play another game, `false` otherwise
-    pub fn play_again_menu(&mut self) -> crossterm::Result<bool>
+    pub fn play_again_menu(&self) -> crossterm::Result<bool>
     {
         self.draw_play_again_menu()?;
 
