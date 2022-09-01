@@ -12,10 +12,7 @@ use crate::active_player::ActivePlayer;
 /// 
 /// If a turn is played correctly, the function will return `true`.
 /// If a turn cannot be played (because, for example, the game is finished),
-/// the function will return `false`.
-/// 
-/// TODO: actually implement AI
-/// this is currently just a stub that plays the first available move   
+/// the function will return `false`. 
 pub fn do_turn(board: &mut GameBoard, player: &ActivePlayer) -> bool
 {
     // return early if game is already finished
