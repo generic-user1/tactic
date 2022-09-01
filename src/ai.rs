@@ -4,6 +4,66 @@ use crate::game_outcome::GameOutcome;
 use crate::gameboard::{GameBoard, BoardSpaceLocation, BoardSpace};
 use crate::active_player::ActivePlayer;
 
+/// Represents an AI player
+pub struct AiPlayer{
+    difficulty: f64
+}
+
+impl AiPlayer{
+    
+    /// Construct and return a new `AiPlayer` at the specified difficulty
+    /// 
+    /// `difficulty` is a value within the range `(0.0, 1.0]` that represents
+    /// the difficulty of the AI player. `1.0` is the maximum difficulty.
+    /// 
+    ///# Panics
+    /// 
+    /// This method panics if difficulty is less than or equal to 0,
+    /// or if difficulty is greater than 1.
+    pub fn new(difficulty:f64) -> Self
+    {
+        let mut new_instance = Self::default();
+        new_instance.set_difficulty(difficulty);
+        new_instance
+    }
+
+    /// Set the difficulty of this `AiPlayer`
+    /// 
+    /// `difficulty` is a value within the range `(0.0, 1.0]` that represents
+    /// the difficulty of the AI player. `1.0` is the maximum difficulty.
+    /// 
+    ///# Panics
+    /// 
+    /// This method panics if difficulty is less than or equal to 0,
+    /// or if difficulty is greater than 1.
+    pub fn set_difficulty(&mut self, difficulty:f64)
+    {
+        if difficulty <= 0.0 || difficulty > 1.0 {
+            panic!("Provided difficulty of {} is outside the difficulty range of (0.0,1.0]", 
+                difficulty);
+        }
+
+        self.difficulty = difficulty;
+    }
+
+    /// Returns the difficulty of this `AiPlayer`
+    /// 
+    /// The difficulty will always be within the range`(0.0, 1.0]`
+    pub fn difficulty(&self) -> f64
+    {
+        self.difficulty
+    }
+
+}
+
+impl Default for AiPlayer{
+    fn default() -> Self {
+        Self{difficulty:1.0}
+    }
+}
+
+
+
 /// Plays a turn on the specified game board
 /// 
 /// Which turn to play (player X or player O) is determined by `player`
