@@ -16,7 +16,7 @@ fn main() -> crossterm::Result<()>
     let number_of_games = ui.number_of_games();
     let final_game_board = ui.take_game_board();
 
-    println!("{}", final_game_board);
+    println!("Final board:{}", final_game_board);
     println!("X score:     {}\t({:.2}%)", player_x_score, 
         if number_of_games != 0 {
             ((player_x_score as f64)/(number_of_games as f64))*100.0
