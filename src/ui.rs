@@ -12,9 +12,6 @@ use crossterm::{
     QueueableCommand
 };
 
-const TERMSIZE_MIN_X: u16 = 11;
-const TERMSIZE_MIN_Y: u16 = 8;
-
 //declare event_handling module which contains
 //event handling impl's for the UI struct
 mod event_handling;
@@ -56,6 +53,10 @@ pub struct UI{
 }
 
 impl UI{
+
+    const TERMSIZE_MIN_X: u16 = 11;
+    const TERMSIZE_MIN_Y: u16 = 8;
+
     /// Sets up the terminal for running the game
     /// 
     /// Cleanup of the terminal is performed by the [Drop] implementation of this struct

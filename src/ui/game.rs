@@ -10,7 +10,6 @@ use crossterm::{
     ExecutableCommand
 };
 
-use super::{TERMSIZE_MIN_X, TERMSIZE_MIN_Y};
 use crate::{
     active_player::ActivePlayer,
     game_outcome::GameOutcome,
@@ -50,7 +49,7 @@ impl super::UI{
                 .flush()?;
 
             // only print game board if terminal is large enough
-            if self.terminal_x_size >= TERMSIZE_MIN_X && self.terminal_y_size >= TERMSIZE_MIN_Y {
+            if self.terminal_x_size >= Self::TERMSIZE_MIN_X && self.terminal_y_size >= Self::TERMSIZE_MIN_Y {
                 self.draw_game()?;
                 stdout()
                     .queue(MoveToRow(6))?
