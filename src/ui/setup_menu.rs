@@ -10,7 +10,7 @@
 //! 
 //!- game number limit (auto-exit when limit reached)
 //! 
-//!  - unlimited
+//!  - unlimited (must disallow if/when using 2 ai players)
 //! 
 //!  - to n (custom value)
 //! 
