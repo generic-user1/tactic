@@ -27,8 +27,8 @@ pub fn do_turn(board: &mut GameBoard, player: &ActivePlayer) -> bool
     for location in BoardSpaceLocation::all(){
         if board.space(location) == &BoardSpace::Empty {
             possible_moves.push(PossibleMove::new(
-                &board, 
-                &location, 
+                board, 
+                location, 
                 player, 
                 player
             ));
@@ -77,12 +77,11 @@ impl PossibleMove{
     /// it is usually best to reference or clone an existing `PossibleMove` instance
     pub fn new(
         board: &GameBoard, 
-        location: &BoardSpaceLocation, 
+        new_location: BoardSpaceLocation, 
         active_player: &ActivePlayer,
         winning_player: &ActivePlayer
     ) -> Self
     {
-        let new_location = location.clone();
         let mut new_board = board.clone();
         *new_board.space_mut(new_location) = 
             active_player.get_board_space();
@@ -94,9 +93,9 @@ impl PossibleMove{
                 if new_board.space(sub_location) == &BoardSpace::Empty{
                     sub_moves.push(Self::new(
                         &new_board, 
-                        &sub_location, 
+                    sub_location, 
                         &sub_active_player,
-                        &winning_player
+                        winning_player
                     ))
                 }
             }
@@ -108,7 +107,7 @@ impl PossibleMove{
         let win_score = Self::calculate_win_score(
             &sub_moves, 
             &new_board, 
-            &winning_player
+            winning_player
         );
         Self {
             new_location,

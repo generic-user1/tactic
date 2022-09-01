@@ -249,7 +249,7 @@ impl GameBoard {
     /// Convinence method for `GameOutcome::analyze_game(&board)`
     pub fn game_outcome(&self) -> GameOutcome
     {
-        GameOutcome::analyze_game(&self)
+        GameOutcome::analyze_game(self)
     }
 }
 
