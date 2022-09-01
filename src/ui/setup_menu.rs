@@ -17,3 +17,5 @@
 //!  - to first win
 //! 
 //!  - to score percent? unsure of this one
+//! 
+//!- ai player difficulty 
