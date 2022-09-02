@@ -60,8 +60,8 @@ impl AiPlayer{
     /// Returns the mistake chance of this `AiPlayer`
     /// 
     /// The mistake chance is the chance (from 0 to 1) that on any given turn,
-    /// this `AiPlayer` will make a `mistake` and select a non-optimal move.
-    /// How non-optimal this move is depends on the difficulty (lower difficulty means less optimal).
+    /// this `AiPlayer` will make a `mistake` and select the least optimal move
+    /// instead of the most optimal move.
     /// 
     /// The mistake chance is a function of the difficulty; more specifically `mistake_chance = 1 - difficulty`.
     /// This means that a higher difficulty results in a lower mistake chance (and vice versa). A difficulty of `1.0`
@@ -118,28 +118,17 @@ impl AiPlayer{
                 None => std::cmp::Ordering::Equal // assume equality if no ordering exists
             }
         });
-        
-        //cache the rng as it will be used more than once
-        let mut rng = rand::thread_rng();
 
         // generate a number from 0 to (not including) 1
         // if the mistake chance is greater than this value, do mistake; otherwise play optimally
         // 1.0 mistake chance is always greater than generated value
         // 0.0 mistake chance is always less than or equal to (thus not greater than) generated value
-        let do_mistake = self.mistake_chance() > rng.gen_range(0.0..1.0);
+        let do_mistake = self.mistake_chance() > rand::thread_rng().gen_range(0.0..1.0);
         
         // determine next move 
         let next_move = if do_mistake {
-            // pick non-optimal move by scaling difficulty to length of possible_moves
-            // rounding down means we never pick the last move unless it's the only move
-            let move_index = (self.difficulty * (possible_moves.len() as f64)) as usize;
-            match possible_moves.get(move_index){
-                Some(pmove) => pmove,
-                None => {
-                    //get first move in this case, which must exist because we already returned if possible moves was empty
-                    possible_moves.first().unwrap()
-                }
-            }
+            // play worst move
+            possible_moves.first().unwrap()
         } else {
             // play optimally if do_mistake is false
             possible_moves.last().unwrap()
