@@ -64,7 +64,7 @@
 //! 
 //! Selected options need to be highlighted somehow, probably by filling the background of their text.
 
-use crate::{player_type::PlayerType, ai::AiPlayer};
+use crate::{active_player::ActivePlayer, player_type::PlayerType, ai::AiPlayer};
 
 /// Representation of the state of the menu
 /// 
@@ -76,22 +76,117 @@ use crate::{player_type::PlayerType, ai::AiPlayer};
 struct SetupMenu {
     /// the AiPlayer instance returned here isn't used,
     /// it will be created if appropriate using the 'player_x_difficulty' option
-    player_x_type: MenuOption<PlayerType>,
+    player_x_type: PlayerTypeMenuOption,
 
     /// the AiPlayer instance returned here isn't used,
     /// it will be created if appropriate using the 'player_o_difficulty' option
-    player_o_type: MenuOption<PlayerType>,
+    player_o_type: PlayerTypeMenuOption,
 
     /// only used if player x is AI
-    player_x_ai: MenuOption<AiPlayer>,
+    player_x_ai: DifficultyMenuOption,
 
     /// only used if player o is AI
-    player_o_ai: MenuOption<AiPlayer>,
+    player_o_ai: DifficultyMenuOption,
 
     autoquit_mode: MenuOption<GameAutoquitMode>,
 
+    autoquit_value: MenuOption<u32>,
+
     game_mode: DescribedMenuOption<GameMode>
     
+}
+
+struct DifficultyMenuOption {
+    selected_difficulty: f64,
+    player: ActivePlayer
+}
+
+impl DifficultyMenuOption {
+    const DIFFICULTY_STEP: f64 = 0.1;
+
+    /// Creates and returns a new PlayerTypeMenuOption for the specified player
+    pub fn new(player: ActivePlayer) -> Self
+    {
+        Self{player, selected_difficulty: 0.5}
+    }
+}
+
+impl MenuOption<AiPlayer> for DifficultyMenuOption {
+    
+    fn value(self) -> AiPlayer {
+        AiPlayer::new(self.selected_difficulty)
+    }
+
+    fn current_value_name(&self) -> String {
+        format!("{}", (self.selected_difficulty * 10.0) as u8)
+    }
+
+    fn option_name(&self) -> String {
+        format!("Player {} Difficulty", self.player.get_char())
+    }
+
+    fn next_value(&mut self) -> Result<(),()> {
+        let new_value = self.selected_difficulty + Self::DIFFICULTY_STEP;
+        if new_value > 1.0 {
+            Err(())
+        } else {
+            self.selected_difficulty = new_value;
+            Ok(())
+        }
+    }
+
+    fn prev_value(&mut self) -> Result<(),()> {
+        let new_value = self.selected_difficulty - Self::DIFFICULTY_STEP;
+        if new_value < 0.0 {
+            Err(())
+        } else {
+            self.selected_difficulty = new_value;
+            Ok(())
+        }
+    }
+
+}
+
+struct PlayerTypeMenuOption{
+    selected_player_type: PlayerType,
+    player: ActivePlayer
+}
+
+impl PlayerTypeMenuOption{
+    /// Creates and returns a new PlayerTypeMenuOption for the specified player
+    pub fn new(player: ActivePlayer, default_type: PlayerType) -> Self
+    {
+        Self{player, selected_player_type: default_type}
+    }
+}
+
+impl MenuOption<PlayerType> for PlayerTypeMenuOption{
+    fn value(self) -> PlayerType {
+        self.selected_player_type
+    }
+
+    fn current_value_name(&self) -> String {
+        match self.selected_player_type {
+            PlayerType::Human => "Human".to_owned(),
+            PlayerType::AI(_) => "AI".to_owned()
+        }
+    }
+
+    fn option_name(&self) -> String {
+        format!("Player {} Type", self.player.get_char())
+    }
+
+    fn next_value(&mut self) -> Result<(),()> {
+        match self.selected_player_type {
+            PlayerType::Human => self.selected_player_type = PlayerType::AI(AiPlayer::default()),
+            PlayerType::AI(_) => self.selected_player_type = PlayerType::Human
+        }
+        Ok(())
+    }
+
+    fn prev_value(&mut self) -> Result<(),()> {
+        self.next_value()
+    }
 }
 
 /// Determines the game mode to be played
@@ -109,11 +204,11 @@ enum GameAutoquitMode {
     #[default]
     Unlimited,
     /// Limit the total number of games
-    GameNumberLimit(u32),
+    GameNumberLimit,
     /// Limit the number of games that are not draws
-    NonDrawNumberLimit(u32),
+    NonDrawNumberLimit,
     /// Limit the score of either player
-    ScoreNumberLimit(u32)
+    ScoreNumberLimit
 }
 
 /// Menu option; allows user to configure some value
@@ -143,8 +238,8 @@ trait MenuOption<T> {
     /// Returns Ok if this happens correctly, or Err if it doesn't (usually because we are already at maximum)
     fn prev_value(&mut self) -> Result<(),()>;
 
-    /// Returns the currently selected value
-    fn value(&self) -> T;
+    /// Returns the currently selected value, consuming the instance of MenuOption
+    fn value(self) -> T;
 
 }
 
