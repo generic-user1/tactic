@@ -41,7 +41,7 @@ impl AiPlayer{
     /// or if difficulty is greater than 1.
     pub fn set_difficulty(&mut self, difficulty:f64)
     {
-        if difficulty < 0.0 || difficulty > 1.0 || difficulty.is_nan(){
+        if !((0.0..=1.0).contains(&difficulty)){
             panic!("Provided difficulty of {} is outside the difficulty range of (0.0,1.0]", 
                 difficulty);
         }
