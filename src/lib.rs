@@ -77,7 +77,7 @@ mod game_settings{
         Reverse
     }
     /// Determines how many games will be played before auto-exiting
-    #[derive(Default)]
+    #[derive(Default, PartialEq, Eq)]
     pub enum GameAutoquitMode {
         /// No limit
         #[default]

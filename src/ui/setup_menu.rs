@@ -145,6 +145,12 @@ trait MenuOption<T> {
     /// Returns the currently selected value, consuming the instance of MenuOption
     fn value(self) -> T;
 
+    /// Returns true when the maximum value has been reached (i.e. calling next_value will fail)
+    fn at_maximum(&self) -> bool;
+
+    /// Returns true when the minimum value has been reached (i.e. calling prev_value will fail)
+    fn at_minimum(&self) -> bool;
+
 }
 
 /// [MenuOption] with an added description of the currently selected value

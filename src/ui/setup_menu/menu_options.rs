@@ -59,6 +59,14 @@ impl MenuOption<GameMode> for GameModeMenuOption {
     fn prev_value(&mut self) -> Result<(),()> {
         self.next_value()
     }
+
+    fn at_maximum(&self) -> bool {
+        false
+    }
+
+    fn at_minimum(&self) -> bool {
+        false
+    }
 }
 
 pub(super) struct AutoquitValueMenuOption {
@@ -108,6 +116,14 @@ impl MenuOption<u32> for AutoquitValueMenuOption {
         } else {
             Err(())
         }
+    }
+
+    fn at_maximum(&self) -> bool {
+        self.selected_value == u32::MAX
+    }
+
+    fn at_minimum(&self) -> bool {
+        self.selected_value == 1
     }
 }
 
@@ -176,6 +192,14 @@ impl MenuOption<GameAutoquitMode> for AutoquitModeMenuOption {
         }
         Ok(())
     }
+
+    fn at_maximum(&self) -> bool {
+        self.selected_mode == GameAutoquitMode::ScoreNumberLimit
+    }
+
+    fn at_minimum(&self) -> bool {
+        self.selected_mode == GameAutoquitMode::Unlimited
+    }
 }
 
 pub(super) struct DifficultyMenuOption {
@@ -227,6 +251,14 @@ impl MenuOption<AiPlayer> for DifficultyMenuOption {
         }
     }
 
+    fn at_maximum(&self) -> bool {
+        self.selected_difficulty == 1.0
+    }
+
+    fn at_minimum(&self) -> bool {
+        self.selected_difficulty == 0.0
+    }
+
 }
 
 pub(super) struct PlayerTypeMenuOption{
@@ -268,5 +300,13 @@ impl MenuOption<PlayerType> for PlayerTypeMenuOption{
 
     fn prev_value(&mut self) -> Result<(),()> {
         self.next_value()
+    }
+
+    fn at_maximum(&self) -> bool {
+        false
+    }
+
+    fn at_minimum(&self) -> bool {
+        false
     }
 }
