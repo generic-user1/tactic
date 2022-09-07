@@ -15,6 +15,10 @@
 // menu option structs
 mod menu_options;
 
+// Declare menu_loop module which contains 
+// menu interaction and rendering impls for SetupMenu
+mod menu_loop;
+
 use menu_options::{
     PlayerTypeMenuOption,
     DifficultyMenuOption,
@@ -75,15 +79,6 @@ impl SetupMenu{
             autoquit_value: AutoquitValueMenuOption::new(),
             game_mode: GameModeMenuOption::new()
         }
-    }
-
-    /// Display menu until user submits choices
-    /// 
-    /// TODO: implement, currently a stub
-    pub fn setup_menu_loop(&mut self) -> crossterm::Result<()>
-    {
-        //stub 
-        Ok(())
     }
 
     /// Alter the given [UI] instance to match the settings of this `SetupMenu` 
