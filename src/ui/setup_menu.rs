@@ -23,6 +23,10 @@ use menu_options::{
     GameModeMenuOption
 };
 
+use crate::{active_player::ActivePlayer, player_type::PlayerType, ai::AiPlayer};
+
+use super::UI;
+
 /// Representation of the state of the menu
 /// 
 ///# Notes
@@ -52,26 +56,61 @@ pub(super) struct SetupMenu {
     
 }
 
-/// Determines the game mode to be played
-#[derive(Default)]
-enum GameMode{
-    #[default]
-    Classic,
-    Reverse
-}
+impl SetupMenu{
+    /// Creates and returns a new SetupMenu
+    pub fn new() -> Self
+    {
+        Self {
+            player_x_type: PlayerTypeMenuOption::new(
+                ActivePlayer::PlayerX, 
+                PlayerType::Human
+            ),
+            player_o_type: PlayerTypeMenuOption::new(
+                ActivePlayer::PlayerO,
+                PlayerType::AI(AiPlayer::default())
+            ),
+            player_x_ai: DifficultyMenuOption::new(ActivePlayer::PlayerX),
+            player_o_ai: DifficultyMenuOption::new(ActivePlayer::PlayerO),
+            autoquit_mode: AutoquitModeMenuOption::new(),
+            autoquit_value: AutoquitValueMenuOption::new(),
+            game_mode: GameModeMenuOption::new()
+        }
+    }
 
-/// Determines how many games will be played before auto-exiting
-#[derive(Default)]
-enum GameAutoquitMode {
-    /// No limit
-    #[default]
-    Unlimited,
-    /// Limit the total number of games
-    GameNumberLimit,
-    /// Limit the number of games that are not draws
-    NonDrawNumberLimit,
-    /// Limit the score of either player
-    ScoreNumberLimit
+    /// Display menu until user submits choices
+    /// 
+    /// TODO: implement, currently a stub
+    pub fn setup_menu_loop(&mut self) -> crossterm::Result<()>
+    {
+        //stub 
+        Ok(())
+    }
+
+    /// Alter the given [UI] instance to match the settings of this `SetupMenu` 
+    /// 
+    /// Consumes this `SetupMenu` instance
+    pub fn apply_settings(self, ui_instance: &mut UI)
+    {
+        ui_instance.player_x = match self.player_x_type.value() {
+            PlayerType::Human => PlayerType::Human,
+            PlayerType::AI(_) => {
+                let ai_player = self.player_x_ai.value();
+                PlayerType::AI(ai_player)
+            }
+        };
+
+        ui_instance.player_o = match self.player_o_type.value() {
+            PlayerType::Human => PlayerType::Human,
+            PlayerType::AI(_) => {
+                let ai_player = self.player_o_ai.value();
+                PlayerType::AI(ai_player)
+            }
+        };
+
+        ui_instance.game_autoquit_mode = self.autoquit_mode.value();
+        ui_instance.game_autoquit_value = self.autoquit_value.value();
+        ui_instance.game_mode = self.game_mode.value();
+    }
 }
 
 /// Menu option; allows user to configure some value

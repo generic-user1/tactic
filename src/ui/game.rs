@@ -14,7 +14,7 @@ use crate::{
     game_outcome::GameOutcome,
     gameboard::{GameBoard, BoardSpaceLocation},
     player_type::PlayerType,
-    ai::AiError
+    ai::AiError, game_settings::GameMode
 };
 
 impl super::UI{
@@ -91,10 +91,26 @@ impl super::UI{
 
         match game_outcome {
             GameOutcome::PlayerX(_) => {
-                self.player_x_score +=1;
+                match self.game_mode {
+                    GameMode::Classic => {
+                        self.player_x_score +=1;
+                    },
+                    GameMode::Reverse => {
+                        self.player_o_score +=1;
+                    }
+                }
+                
             },
             GameOutcome::PlayerO(_) => {
-                self.player_o_score +=1;
+                match self.game_mode {
+                    GameMode::Classic => {
+                        self.player_o_score +=1;
+                    },
+                    GameMode::Reverse => {
+                        self.player_x_score +=1;
+                    }
+                }
+                
             },
             GameOutcome::Draw => {
                 self.number_of_draws +=1;

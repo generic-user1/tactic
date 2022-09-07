@@ -5,7 +5,9 @@ use std::io::{stdout, Write};
 use crate::{
     gameboard::GameBoard,
     player_type::PlayerType,
-    active_player::ActivePlayer
+    active_player::ActivePlayer,
+    ai::AiPlayer,
+    game_settings::{GameAutoquitMode, GameMode}
 };
 use crossterm::{
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
@@ -27,6 +29,7 @@ mod play_again_menu;
 //declare setup_menu module which contains
 //pre-game menu impl's for the UI struct
 mod setup_menu;
+use self::setup_menu::SetupMenu;
 
 /// Struct used to manage the game UI
 /// 
@@ -54,7 +57,10 @@ pub struct UI{
     exit_flag: bool,
     player_x_score: u32,
     player_o_score: u32,
-    number_of_draws: u32
+    number_of_draws: u32,
+    game_autoquit_mode: GameAutoquitMode,
+    game_autoquit_value: u32,
+    game_mode: GameMode
 }
 
 impl UI{
@@ -65,13 +71,15 @@ impl UI{
     /// Sets up the terminal for running the game
     /// 
     /// Cleanup of the terminal is performed by the [Drop] implementation of this struct
-    pub fn new(player_x: PlayerType, player_o: PlayerType) -> crossterm::Result<Self>
+    /// 
+    /// The [Default] implementation for `UI` is equivalent to this function's return value.
+    pub fn new() -> crossterm::Result<Self>
     {
         Self::setup_terminal()?;
         let (terminal_x_size, terminal_y_size) = terminal::size()?;
         let new_instance = Self{
-            player_x,
-            player_o,
+            player_x: PlayerType::Human,
+            player_o: PlayerType::AI(AiPlayer::default()),
             active_player: ActivePlayer::PlayerX,
             cursor_x_pos: 0,
             cursor_y_pos: 0,
@@ -81,9 +89,50 @@ impl UI{
             exit_flag: false,
             player_x_score: 0,
             player_o_score: 0,
-            number_of_draws: 0
+            number_of_draws: 0,
+            game_autoquit_mode: GameAutoquitMode::default(),
+            game_autoquit_value: 1,
+            game_mode: GameMode::default()
         };
         Ok(new_instance)
+    }
+
+    /// The pre-game menu 
+    ///
+    /// Allows user to configure different aspects of the game
+    /// 
+    /// Sets appropriate members of the `UI` instance so that when [UI::game_loop] 
+    /// is called, the game is played with desired settings.
+    pub fn setup_menu(&mut self) -> crossterm::Result<()>
+    {
+        let mut setup_menu = SetupMenu::new();
+
+        setup_menu.setup_menu_loop()?;
+
+        setup_menu.apply_settings(self);
+
+        Ok(())
+    }
+
+    /// Returns true if the autoquit condition is satisfied, false otherwise
+    /// 
+    /// The exact set of circumstances that lead to this method returning true
+    /// depending on the user's choices in the setup menu 
+    pub fn autoquit_satisfied(&self) -> bool
+    {
+        match self.game_autoquit_mode {
+            GameAutoquitMode::Unlimited => false,
+            GameAutoquitMode::GameNumberLimit => {
+                self.number_of_games() >= self.game_autoquit_value
+            },
+            GameAutoquitMode::NonDrawNumberLimit => {
+                self.player_x_score() + self.player_o_score() >= self.game_autoquit_value
+            },
+            GameAutoquitMode::ScoreNumberLimit => {
+                self.player_x_score() >= self.game_autoquit_value ||
+                self.player_o_score() >= self.game_autoquit_value
+            }
+        }
     }
 
     /// Returns a reference to the [GameBoard] of this `UI`
@@ -212,7 +261,7 @@ impl Default for UI {
     /// [Read More](https://doc.rust-lang.org/1.62.1/core/default/trait.Default.html#tymethod.default)
     fn default() -> Self 
     {
-        match Self::new(PlayerType::default(), PlayerType::default()){
+        match Self::new(){
             Ok(instance) => instance,
             Err(_) => panic!("failed to create default UI instance")
         }

@@ -1,21 +1,20 @@
 use tactic::{
     ui::UI, 
     game_outcome::GameOutcome, 
-    player_type::PlayerType, 
-    active_player::ActivePlayer,
-    ai::AiPlayer
+    active_player::ActivePlayer
 };
 
 fn main() -> crossterm::Result<()>
 {
-    let player_x = PlayerType::Human;
-    let player_o = PlayerType::AI(AiPlayer::new(0.5));
+    let mut ui = UI::new()?;
 
-    let mut ui = UI::new(player_x, player_o)?;
+    ui.setup_menu()?;
 
     loop {
         let game_outcome = ui.game_loop()?;
-        if game_outcome == GameOutcome::Incomplete || !ui.play_again_menu()? {
+        if game_outcome == GameOutcome::Incomplete || 
+            ui.autoquit_satisfied() || 
+            !ui.play_again_menu()? {
             break;
         } else {
             match game_outcome {

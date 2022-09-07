@@ -1,7 +1,12 @@
 //! MenuOption implementors for the setup menu
 
-use crate::{active_player::ActivePlayer, player_type::PlayerType, ai::AiPlayer};
-use super::{MenuOption, DescribedMenuOption, GameMode, GameAutoquitMode};
+use crate::{
+    active_player::ActivePlayer, 
+    player_type::PlayerType, 
+    ai::AiPlayer,
+    game_settings::{GameMode, GameAutoquitMode}
+};
+use super::{MenuOption, DescribedMenuOption};
 
 pub(super) struct GameModeMenuOption {
     selected_game_mode: GameMode
@@ -179,12 +184,12 @@ pub(super) struct DifficultyMenuOption {
 }
 
 impl DifficultyMenuOption {
-    const DIFFICULTY_STEP: f64 = 0.1;
+    const DIFFICULTY_STEP: f64 = 0.05;
 
     /// Creates and returns a new DifficultyMenuOption for the specified player
     pub fn new(player: ActivePlayer) -> Self
     {
-        Self{player, selected_difficulty: 0.5}
+        Self{player, selected_difficulty: 0.85}
     }
 }
 
@@ -195,7 +200,7 @@ impl MenuOption<AiPlayer> for DifficultyMenuOption {
     }
 
     fn current_value_name(&self) -> String {
-        format!("{}", (self.selected_difficulty * 10.0) as u8)
+        format!("{}", (self.selected_difficulty * 100.0) as u8)
     }
 
     fn option_name(&self) -> String {

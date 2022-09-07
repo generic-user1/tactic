@@ -65,3 +65,28 @@ pub mod active_player{
         }
     }
 }
+
+
+/// Enums to represent different game settings
+mod game_settings{
+    /// Determines the game mode to be played
+    #[derive(Default)]
+    pub enum GameMode{
+        #[default]
+        Classic,
+        Reverse
+    }
+    /// Determines how many games will be played before auto-exiting
+    #[derive(Default)]
+    pub enum GameAutoquitMode {
+        /// No limit
+        #[default]
+        Unlimited,
+        /// Limit the total number of games
+        GameNumberLimit,
+        /// Limit the number of games that are not draws
+        NonDrawNumberLimit,
+        /// Limit the score of either player
+        ScoreNumberLimit
+    }
+}
