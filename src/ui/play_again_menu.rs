@@ -10,7 +10,7 @@ use crossterm::{
     ExecutableCommand
 };
 
-use crate::game_outcome::GameOutcome;
+use crate::{game_outcome::GameOutcome, game_settings::GameMode};
 
 impl super::UI{
     
@@ -76,8 +76,14 @@ impl super::UI{
         self.draw_game()?;
 
         let game_outcome_text = match self.game_board.game_outcome(){
-            GameOutcome::PlayerX(_) => "Player X wins!",
-            GameOutcome::PlayerO(_) => "Player O wins!",
+            GameOutcome::PlayerX(_) => match self.game_mode {
+                GameMode::Classic => "Player X wins!",
+                GameMode::Reverse => "Player O wins!"
+            },
+            GameOutcome::PlayerO(_) => match self.game_mode {
+                GameMode::Classic => "Player O wins!",
+                GameMode::Reverse => "Player X wins!"
+            },
             GameOutcome::Draw => "Draw!",
             GameOutcome::Incomplete => "Game finished early!"
         };

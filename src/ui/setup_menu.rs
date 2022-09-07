@@ -27,7 +27,7 @@ use menu_options::{
     GameModeMenuOption
 };
 
-use crate::{active_player::ActivePlayer, player_type::PlayerType, ai::AiPlayer};
+use crate::{active_player::ActivePlayer, player_type::PlayerType, ai::AiPlayer, game_settings::GameMode};
 
 use super::UI;
 
@@ -86,10 +86,14 @@ impl SetupMenu{
     /// Consumes this `SetupMenu` instance
     pub fn apply_settings(self, ui_instance: &mut UI)
     {
+        let game_mode = self.game_mode.value();
         ui_instance.player_x = match self.player_x_type.value() {
             PlayerType::Human => PlayerType::Human,
             PlayerType::AI(_) => {
-                let ai_player = self.player_x_ai.value();
+                let ai_player = match game_mode {
+                    GameMode::Classic => self.player_x_ai.value(),
+                    GameMode::Reverse => self.player_x_ai.value().reverse_difficulty()
+                };
                 PlayerType::AI(ai_player)
             }
         };
@@ -97,14 +101,17 @@ impl SetupMenu{
         ui_instance.player_o = match self.player_o_type.value() {
             PlayerType::Human => PlayerType::Human,
             PlayerType::AI(_) => {
-                let ai_player = self.player_o_ai.value();
+                let ai_player = match game_mode {
+                    GameMode::Classic => self.player_o_ai.value(),
+                    GameMode::Reverse => self.player_o_ai.value().reverse_difficulty()
+                };
                 PlayerType::AI(ai_player)
             }
         };
 
         ui_instance.game_autoquit_mode = self.autoquit_mode.value();
         ui_instance.game_autoquit_value = self.autoquit_value.value();
-        ui_instance.game_mode = self.game_mode.value();
+        ui_instance.game_mode = game_mode;
     }
 }
 

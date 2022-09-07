@@ -57,6 +57,14 @@ impl AiPlayer{
         self.difficulty
     }
 
+    /// Returns a new `AiPlayer` with reversed difficulty
+    /// 
+    /// This is useful for the Reversed game mode
+    pub fn reverse_difficulty(&self) -> Self 
+    {
+        Self{difficulty:self.mistake_chance()}
+    }
+
     /// Returns the mistake chance of this `AiPlayer`
     /// 
     /// The mistake chance is the chance (from 0 to 1) that on any given turn,
