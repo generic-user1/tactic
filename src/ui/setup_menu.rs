@@ -27,7 +27,7 @@ use menu_options::{
     GameModeMenuOption
 };
 
-use crate::{active_player::ActivePlayer, player_type::PlayerType, ai::AiPlayer, game_settings::GameMode};
+use crate::{active_player::ActivePlayer, player_type::PlayerType, ai::AiPlayer, game_settings::{GameMode, GameAutoquitMode}};
 
 use super::UI;
 
@@ -56,8 +56,10 @@ pub(super) struct SetupMenu {
 
     autoquit_value: AutoquitValueMenuOption,
 
-    game_mode: GameModeMenuOption
+    game_mode: GameModeMenuOption,
     
+    selected_option: SelectedOption
+
 }
 
 impl SetupMenu{
@@ -77,7 +79,102 @@ impl SetupMenu{
             player_o_ai: DifficultyMenuOption::new(ActivePlayer::PlayerO),
             autoquit_mode: AutoquitModeMenuOption::new(),
             autoquit_value: AutoquitValueMenuOption::new(),
-            game_mode: GameModeMenuOption::new()
+            game_mode: GameModeMenuOption::new(),
+            selected_option: SelectedOption::PlayerXType
+        }
+    }
+
+    fn selected_option(&self) -> &dyn MenuOption
+    {
+        match self.selected_option{
+            SelectedOption::PlayerXType => &self.player_x_type,
+            SelectedOption::PlayerOType => &self.player_o_type,
+            SelectedOption::PlayerXAi => &self.player_x_ai,
+            SelectedOption::PlayerOAi => &self.player_o_ai,
+            SelectedOption::AutoquitMode => &self.autoquit_mode,
+            SelectedOption::AutoquitValue => &self.autoquit_value,
+            SelectedOption::GameMode => &self.game_mode
+        }
+    }
+
+    /// Selects the next option
+    pub fn next_option(&mut self)
+    {
+        match self.selected_option {
+            SelectedOption::PlayerXType => {
+                if self.player_x_type.value() == &PlayerType::Human{
+                    self.selected_option = SelectedOption::PlayerOType
+                } else {
+                    self.selected_option = SelectedOption::PlayerXAi
+                }
+            },
+            SelectedOption::PlayerXAi => {
+                self.selected_option = SelectedOption::PlayerOType
+            }
+            SelectedOption::PlayerOType => {
+                if self.player_o_type.value() == &PlayerType::Human{
+                    self.selected_option = SelectedOption::AutoquitMode
+                } else {
+                    self.selected_option = SelectedOption::PlayerOAi
+                }
+            },
+            SelectedOption::PlayerOAi => {
+                self.selected_option = SelectedOption::AutoquitMode
+            },
+            SelectedOption::AutoquitMode => {
+                if self.autoquit_mode.value() == &GameAutoquitMode::Unlimited {
+                    self.selected_option = SelectedOption::GameMode
+                } else {
+                    self.selected_option = SelectedOption::AutoquitValue
+                }
+            },
+            SelectedOption::AutoquitValue => {
+                self.selected_option = SelectedOption::GameMode
+            },
+            SelectedOption::GameMode => {
+                self.selected_option = SelectedOption::PlayerXType
+            }
+            
+        }
+    }
+
+    /// Selects the previous option
+    pub fn prev_option(&mut self)
+    {
+        match self.selected_option {
+            SelectedOption::PlayerXType => {
+                self.selected_option = SelectedOption::GameMode
+            },
+            SelectedOption::PlayerXAi => {
+                self.selected_option = SelectedOption::PlayerXType
+            },
+            SelectedOption::PlayerOType => {
+                if self.player_x_type.value() == &PlayerType::Human{
+                    self.selected_option = SelectedOption::PlayerXType
+                } else {
+                    self.selected_option = SelectedOption::PlayerXAi
+                }
+            },
+            SelectedOption::PlayerOAi => {
+                self.selected_option = SelectedOption::PlayerOType
+            },
+            SelectedOption::AutoquitMode => {
+                if self.player_o_type.value() == &PlayerType::Human{
+                    self.selected_option = SelectedOption::PlayerOType
+                } else {
+                    self.selected_option = SelectedOption::PlayerOAi
+                }
+            },
+            SelectedOption::AutoquitValue => {
+                self.selected_option = SelectedOption::AutoquitMode
+            },
+            SelectedOption::GameMode => {
+                if self.autoquit_mode.value() == &GameAutoquitMode::Unlimited{
+                    self.selected_option = SelectedOption::AutoquitMode
+                } else {
+                    self.selected_option = SelectedOption::AutoquitValue
+                }
+            }
         }
     }
 
@@ -109,14 +206,24 @@ impl SetupMenu{
             }
         };
 
-        ui_instance.game_autoquit_mode = self.autoquit_mode.value();
+        ui_instance.game_autoquit_mode = self.autoquit_mode.consume();
         ui_instance.game_autoquit_value = self.autoquit_value.value();
         ui_instance.game_mode = game_mode;
     }
 }
 
+enum SelectedOption{
+    PlayerXType,
+    PlayerOType,
+    PlayerXAi,
+    PlayerOAi,
+    AutoquitMode,
+    AutoquitValue,
+    GameMode
+}
+
 /// Menu option; allows user to configure some value
-trait MenuOption<T> {
+trait MenuOption {
 
     /// Returns the display name of this option 
     /// 
@@ -142,9 +249,6 @@ trait MenuOption<T> {
     /// Returns Ok if this happens correctly, or Err if it doesn't (usually because we are already at maximum)
     fn prev_value(&mut self) -> Result<(),()>;
 
-    /// Returns the currently selected value, consuming the instance of MenuOption
-    fn value(self) -> T;
-
     /// Returns true when the maximum value has been reached (i.e. calling next_value will fail)
     fn at_maximum(&self) -> bool;
 
@@ -154,7 +258,7 @@ trait MenuOption<T> {
 }
 
 /// [MenuOption] with an added description of the currently selected value
-trait DescribedMenuOption<T>: MenuOption<T> {
+trait DescribedMenuOption: MenuOption {
 
     /// Returns a description of the currently selected value
     fn description(&self) -> String;

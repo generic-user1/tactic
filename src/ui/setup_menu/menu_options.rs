@@ -19,9 +19,14 @@ impl GameModeMenuOption {
     {
         Self{selected_game_mode: GameMode::Classic}
     }
+
+    pub fn value(self) -> GameMode
+    {
+        self.selected_game_mode
+    }
 }
 
-impl DescribedMenuOption<GameMode> for GameModeMenuOption {
+impl DescribedMenuOption for GameModeMenuOption {
     fn description(&self) -> String {
         match self.selected_game_mode {
             GameMode::Classic => "Play to place three of your pieces in a row. ".to_owned() 
@@ -32,10 +37,7 @@ impl DescribedMenuOption<GameMode> for GameModeMenuOption {
     }
 }
 
-impl MenuOption<GameMode> for GameModeMenuOption {
-    fn value(self) -> GameMode {
-        self.selected_game_mode
-    }
+impl MenuOption for GameModeMenuOption {
 
     fn option_name(&self) -> String {
         "Game Mode".to_owned()
@@ -81,12 +83,14 @@ impl AutoquitValueMenuOption {
     {
         Self{selected_value: 1}
     }
-}
 
-impl MenuOption<u32> for AutoquitValueMenuOption {
-    fn value(self) -> u32 {
+    pub fn value(self) -> u32
+    {
         self.selected_value
     }
+}
+
+impl MenuOption for AutoquitValueMenuOption {
 
     fn option_name(&self) -> String {
         "Game Limit Value".to_owned()
@@ -137,12 +141,19 @@ impl AutoquitModeMenuOption{
     {
         Self{selected_mode:GameAutoquitMode::Unlimited}
     }
-}
 
-impl MenuOption<GameAutoquitMode> for AutoquitModeMenuOption {
-    fn value(self) -> GameAutoquitMode {
+    pub fn value(&self) -> &GameAutoquitMode
+    {
+        &self.selected_mode
+    }
+
+    pub fn consume(self) -> GameAutoquitMode
+    {
         self.selected_mode
     }
+}
+
+impl MenuOption for AutoquitModeMenuOption {
 
     fn option_name(&self) -> String {
         "Game Limit Type".to_owned()
@@ -215,13 +226,14 @@ impl DifficultyMenuOption {
     {
         Self{player, selected_difficulty: 0.85}
     }
-}
 
-impl MenuOption<AiPlayer> for DifficultyMenuOption {
-    
-    fn value(self) -> AiPlayer {
+    pub fn value(self) -> AiPlayer
+    {
         AiPlayer::new(self.selected_difficulty)
     }
+}
+
+impl MenuOption for DifficultyMenuOption {
 
     fn current_value_name(&self) -> String {
         format!("{}", (self.selected_difficulty * 100.0) as u8)
@@ -272,12 +284,14 @@ impl PlayerTypeMenuOption{
     {
         Self{player, selected_player_type: default_type}
     }
+    
+    pub fn value(&self) -> &PlayerType
+    {
+        &self.selected_player_type
+    }
 }
 
-impl MenuOption<PlayerType> for PlayerTypeMenuOption{
-    fn value(self) -> PlayerType {
-        self.selected_player_type
-    }
+impl MenuOption for PlayerTypeMenuOption{
 
     fn current_value_name(&self) -> String {
         match self.selected_player_type {
