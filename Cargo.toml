@@ -5,7 +5,7 @@ edition = "2021"
 description = "A terminal tic-tac-toe game with AI opponent"
 authors = ["generic-user1"]
 license = "MIT"
-keywords = ["tic tac toe", "tic-tac-toe", "noughts and crosses", "xs and os"]
+keywords = ["tic-tac-toe", "noughts-and-crosses", "xs-and-os"]
 categories = ["command-line-utilities", "games"]
 repository = "https://github.com/generic-user1/tactic"
 
