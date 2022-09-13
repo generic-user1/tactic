@@ -40,7 +40,11 @@ impl super::SetupMenu {
             if term_x >= Self::TERMSIZE_MIN_X && term_y >= Self::TERMSIZE_MIN_Y {
                 self.render_setup_menu()?;
             } else {
-                stdout().execute(Print("Terminal too small! Please enlarge terminal"))?;
+                stdout()
+                    .queue(MoveToColumn(0))?
+                    .queue(MoveToRow(0))?
+                    .queue(Print("Terminal too small! Please enlarge terminal"))?
+                    .flush()?;
             }
 
             match event::read()? {
@@ -208,6 +212,11 @@ impl super::SetupMenu {
                     .flush()?;
             }
         }
+
+        stdout()
+            .queue(MoveToNextLine(1))?
+            .queue(Print("Use arrow keys to select options. Press Enter to accept or q to quit"))?
+            .flush()?;
 
         Ok(())
     }
