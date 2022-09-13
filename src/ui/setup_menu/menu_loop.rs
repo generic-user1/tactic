@@ -216,7 +216,7 @@ impl super::SetupMenu {
         //advance one line if there is some space beyond the minimum
         //do not advance if there isn't any space
         let (_term_x, term_y) = terminal::size()?;
-        if term_y > Self::TERMSIZE_MIN_Y {
+        if term_y > Self::TERMSIZE_MIN_Y + 1 {
             stdout().queue(MoveToNextLine(1))?;
         }
         stdout()
