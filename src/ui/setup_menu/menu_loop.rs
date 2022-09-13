@@ -213,8 +213,13 @@ impl super::SetupMenu {
             }
         }
 
+        //advance one line if there is some space beyond the minimum
+        //do not advance if there isn't any space
+        let (_term_x, term_y) = terminal::size()?;
+        if term_y > Self::TERMSIZE_MIN_Y {
+            stdout().queue(MoveToNextLine(1))?;
+        }
         stdout()
-            .queue(MoveToNextLine(1))?
             .queue(Print("Use arrow keys to select options. Press Enter to accept or q to quit"))?
             .flush()?;
 
