@@ -4,7 +4,7 @@ use std::io::{stdout, Write};
 
 use crossterm::{
     terminal::{self, Clear, ClearType},
-    style::{Print, StyledContent, ContentStyle, Stylize},
+    style::{Print, StyledContent, Stylize},
     cursor::{self, MoveToColumn, MoveToRow, MoveToNextLine},
     QueueableCommand,
     ExecutableCommand
@@ -195,10 +195,10 @@ impl super::UI{
             if win_locations.contains(&location) {
                 space_char.negative()
             } else {
-                StyledContent::new(ContentStyle::new(), space_char)
+                space_char.stylize()
             }
         } else {
-            StyledContent::new(ContentStyle::new(), space_char)
+            space_char.stylize()
         }
     }
 }
