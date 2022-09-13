@@ -4,17 +4,18 @@ use std::io::{stdout, Write};
 
 use crossterm::{
     terminal::{self, Clear, ClearType},
-    style::Print,
+    style::{Print, StyledContent, ContentStyle, Stylize},
     cursor::{self, MoveToColumn, MoveToRow, MoveToNextLine},
     QueueableCommand,
     ExecutableCommand
 };
 
 use crate::{
-    game_outcome::GameOutcome,
+    game_outcome::{GameOutcome, WinPosition},
     gameboard::{GameBoard, BoardSpaceLocation},
     player_type::PlayerType,
-    ai::AiError, game_settings::GameMode
+    ai::AiError, 
+    game_settings::GameMode
 };
 
 impl super::UI{
@@ -47,7 +48,7 @@ impl super::UI{
 
             // only print game board if terminal is large enough
             if self.terminal_x_size >= Self::TERMSIZE_MIN_X && self.terminal_y_size >= Self::TERMSIZE_MIN_Y {
-                self.draw_game()?;
+                self.draw_game(None)?;
                 stdout()
                     .queue(MoveToRow(6))?
                     .queue(Print(format!("{}'s turn", self.active_player.get_char())))?
@@ -125,27 +126,29 @@ impl super::UI{
 
     /// Writes the game board's state to stdout
     /// 
+    /// If a [WinPosition] is passed, highlights the winning spaces
+    /// 
     /// Causes no change in cursor position, as its position is reset after drawing.
-    pub(crate) fn draw_game(&self) -> crossterm::Result<()>
+    pub(crate) fn draw_game(&self, win_position: Option<WinPosition>) -> crossterm::Result<()>
     {   
         const HORIZ_LINE: &str = "-----------"; 
 
         let (cursor_col, cursor_row) = cursor::position()?;
 
         let top_row = format!(" {} | {} | {}",
-            self.game_board.space(BoardSpaceLocation::TopLeft),
-            self.game_board.space(BoardSpaceLocation::TopMiddle),
-            self.game_board.space(BoardSpaceLocation::TopRight)
+            Self::get_styled_space(BoardSpaceLocation::TopLeft, &self.game_board, win_position),
+            Self::get_styled_space(BoardSpaceLocation::TopMiddle, &self.game_board, win_position),
+            Self::get_styled_space(BoardSpaceLocation::TopRight, &self.game_board, win_position)
         );
         let middle_row = format!(" {} | {} | {}",
-            self.game_board.space(BoardSpaceLocation::MiddleLeft),
-            self.game_board.space(BoardSpaceLocation::MiddleMiddle),
-            self.game_board.space(BoardSpaceLocation::MiddleRight)
+            Self::get_styled_space(BoardSpaceLocation::MiddleLeft, &self.game_board, win_position),
+            Self::get_styled_space(BoardSpaceLocation::MiddleMiddle, &self.game_board, win_position),
+            Self::get_styled_space(BoardSpaceLocation::MiddleRight, &self.game_board, win_position)
         );
         let bottom_row = format!(" {} | {} | {}",
-            self.game_board.space(BoardSpaceLocation::BottomLeft),
-            self.game_board.space(BoardSpaceLocation::BottomMiddle),
-            self.game_board.space(BoardSpaceLocation::BottomRight)
+        Self::get_styled_space(BoardSpaceLocation::BottomLeft, &self.game_board, win_position),
+        Self::get_styled_space(BoardSpaceLocation::BottomMiddle, &self.game_board, win_position),
+        Self::get_styled_space(BoardSpaceLocation::BottomRight, &self.game_board, win_position)
         );
         
         stdout()
@@ -172,5 +175,30 @@ impl super::UI{
             .queue(MoveToRow(cursor_row))?
             .queue(MoveToColumn(cursor_col))?;
             Ok(())
+    }
+
+    /// Returns the char at the given [BoardSpaceLocation], highlighted
+    /// if the location is included in the given [WinPosition]
+    /// 
+    /// If `win_position` is [None], all letters will be styled normally
+    fn get_styled_space(
+        location: BoardSpaceLocation, 
+        game_board: &GameBoard,
+        win_position: Option<WinPosition>
+    ) -> StyledContent<char>
+    {
+        let space_char = game_board.space(location).get_char();
+
+        if let Some(win_position) = win_position {
+            let win_locations = win_position.as_board_spaces();
+            
+            if win_locations.contains(&location) {
+                space_char.negative()
+            } else {
+                StyledContent::new(ContentStyle::new(), space_char)
+            }
+        } else {
+            StyledContent::new(ContentStyle::new(), space_char)
+        }
     }
 }

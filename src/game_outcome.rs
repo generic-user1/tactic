@@ -93,7 +93,7 @@ impl GameOutcome {
 /// 
 /// The [GameOutcome::analyze_game] function will check each win position in the order
 /// that `WinPosition` variants are defined.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum WinPosition {
     TopRow,
     MiddleRow,

@@ -39,7 +39,7 @@ impl Display for BoardSpace {
 }
 
 /// Enum representing all the possible space locations on a game board
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BoardSpaceLocation {
     TopLeft,
     TopMiddle,

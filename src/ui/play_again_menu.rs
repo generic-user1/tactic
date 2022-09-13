@@ -72,20 +72,30 @@ impl super::UI{
             .queue(MoveToColumn(0))?
             .queue(MoveToRow(0))?
             .flush()?;
-
-        self.draw_game()?;
-
+        
         let game_outcome_text = match self.game_board.game_outcome(){
-            GameOutcome::PlayerX(_) => match self.game_mode {
-                GameMode::Classic => "Player X wins!",
-                GameMode::Reverse => "Player O wins!"
+            GameOutcome::PlayerX(win_position) => {
+                self.draw_game(Some(win_position))?;
+                match self.game_mode {
+                    GameMode::Classic => "Player X wins!",
+                    GameMode::Reverse => "Player O wins!"
+                }
             },
-            GameOutcome::PlayerO(_) => match self.game_mode {
-                GameMode::Classic => "Player O wins!",
-                GameMode::Reverse => "Player X wins!"
+            GameOutcome::PlayerO(win_position) => {
+                self.draw_game(Some(win_position))?;
+                match self.game_mode {
+                    GameMode::Classic => "Player O wins!",
+                    GameMode::Reverse => "Player X wins!"
+                }
             },
-            GameOutcome::Draw => "Draw!",
-            GameOutcome::Incomplete => "Game finished early!"
+            GameOutcome::Draw => {
+                self.draw_game(None)?;
+                "Draw!"
+            },
+            GameOutcome::Incomplete => {
+                self.draw_game(None)?;
+                "Game finished early!"
+            }
         };
         let player_x_score = self.player_x_score();
         let player_o_score = self.player_o_score();

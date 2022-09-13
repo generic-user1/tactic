@@ -27,7 +27,12 @@ use menu_options::{
     GameModeMenuOption
 };
 
-use crate::{active_player::ActivePlayer, player_type::PlayerType, ai::AiPlayer, game_settings::{GameMode, GameAutoquitMode}};
+use crate::{
+    active_player::ActivePlayer, 
+    player_type::PlayerType, 
+    ai::AiPlayer,
+    game_settings::{GameMode, GameAutoquitMode}
+};
 
 use super::UI;
 
