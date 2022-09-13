@@ -6,7 +6,7 @@ use crate::{
     ai::AiPlayer,
     game_settings::{GameMode, GameAutoquitMode}
 };
-use super::{MenuOption, DescribedMenuOption};
+use super::MenuOption;
 
 pub(super) struct GameModeMenuOption {
     selected_game_mode: GameMode
@@ -23,17 +23,6 @@ impl GameModeMenuOption {
     pub fn value(self) -> GameMode
     {
         self.selected_game_mode
-    }
-}
-
-impl DescribedMenuOption for GameModeMenuOption {
-    fn description(&self) -> String {
-        match self.selected_game_mode {
-            GameMode::Classic => "Play to place three of your pieces in a row. ".to_owned() 
-            + "Prevent your opponent from placing three of their pieces in a row.",
-            GameMode::Reverse => "Play to avoid placing three of your pieces in a row. ".to_owned() 
-            + "Try to force your opponent to place three of their pieces in a row."
-        }
     }
 }
 
@@ -68,6 +57,13 @@ impl MenuOption for GameModeMenuOption {
 
     fn at_minimum(&self) -> bool {
         false
+    }
+
+    fn description(&self) -> Option<String> {
+        Some(match self.selected_game_mode {
+            GameMode::Classic => "Play to place three of your pieces in a row. ".to_owned(),
+            GameMode::Reverse => "Play to avoid placing three of your pieces in a row. ".to_owned()
+        })
     }
 }
 
@@ -128,6 +124,10 @@ impl MenuOption for AutoquitValueMenuOption {
 
     fn at_minimum(&self) -> bool {
         self.selected_value == 1
+    }
+
+    fn description(&self) -> Option<String> {
+        None
     }
 }
 
@@ -211,32 +211,36 @@ impl MenuOption for AutoquitModeMenuOption {
     fn at_minimum(&self) -> bool {
         self.selected_mode == GameAutoquitMode::Unlimited
     }
+
+    fn description(&self) -> Option<String> {
+        None
+    }
 }
 
 pub(super) struct DifficultyMenuOption {
-    selected_difficulty: f64,
+    selected_difficulty: i8,
     player: ActivePlayer
 }
 
 impl DifficultyMenuOption {
-    const DIFFICULTY_STEP: f64 = 0.05;
+    const DIFFICULTY_STEP: i8 = 5;
 
     /// Creates and returns a new DifficultyMenuOption for the specified player
     pub fn new(player: ActivePlayer) -> Self
     {
-        Self{player, selected_difficulty: 0.85}
+        Self{player, selected_difficulty: 85}
     }
 
     pub fn value(self) -> AiPlayer
     {
-        AiPlayer::new(self.selected_difficulty)
+        AiPlayer::new(self.selected_difficulty as f64 / 100.0)
     }
 }
 
 impl MenuOption for DifficultyMenuOption {
 
     fn current_value_name(&self) -> String {
-        format!("{}", (self.selected_difficulty * 100.0) as u8)
+        format!("{}", self.selected_difficulty)
     }
 
     fn option_name(&self) -> String {
@@ -245,7 +249,7 @@ impl MenuOption for DifficultyMenuOption {
 
     fn next_value(&mut self) -> Result<(),()> {
         let new_value = self.selected_difficulty + Self::DIFFICULTY_STEP;
-        if new_value > 1.0 {
+        if new_value > 100 {
             Err(())
         } else {
             self.selected_difficulty = new_value;
@@ -255,7 +259,7 @@ impl MenuOption for DifficultyMenuOption {
 
     fn prev_value(&mut self) -> Result<(),()> {
         let new_value = self.selected_difficulty - Self::DIFFICULTY_STEP;
-        if new_value < 0.0 {
+        if new_value < 0 {
             Err(())
         } else {
             self.selected_difficulty = new_value;
@@ -264,11 +268,15 @@ impl MenuOption for DifficultyMenuOption {
     }
 
     fn at_maximum(&self) -> bool {
-        self.selected_difficulty == 1.0
+        self.selected_difficulty == 100
     }
 
     fn at_minimum(&self) -> bool {
-        self.selected_difficulty == 0.0
+        self.selected_difficulty == 0
+    }
+
+    fn description(&self) -> Option<String> {
+        None
     }
 
 }
@@ -322,5 +330,9 @@ impl MenuOption for PlayerTypeMenuOption{
 
     fn at_minimum(&self) -> bool {
         false
+    }
+
+    fn description(&self) -> Option<String> {
+        None
     }
 }

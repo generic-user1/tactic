@@ -63,6 +63,10 @@ pub(super) struct SetupMenu {
 }
 
 impl SetupMenu{
+
+    const TERMSIZE_MIN_X: u16 = 54;
+    const TERMSIZE_MIN_Y: u16 = 8;
+
     /// Creates and returns a new SetupMenu
     pub fn new() -> Self
     {
@@ -81,19 +85,6 @@ impl SetupMenu{
             autoquit_value: AutoquitValueMenuOption::new(),
             game_mode: GameModeMenuOption::new(),
             selected_option: SelectedOption::PlayerXType
-        }
-    }
-
-    fn selected_option(&self) -> &dyn MenuOption
-    {
-        match self.selected_option{
-            SelectedOption::PlayerXType => &self.player_x_type,
-            SelectedOption::PlayerOType => &self.player_o_type,
-            SelectedOption::PlayerXAi => &self.player_x_ai,
-            SelectedOption::PlayerOAi => &self.player_o_ai,
-            SelectedOption::AutoquitMode => &self.autoquit_mode,
-            SelectedOption::AutoquitValue => &self.autoquit_value,
-            SelectedOption::GameMode => &self.game_mode
         }
     }
 
@@ -212,6 +203,7 @@ impl SetupMenu{
     }
 }
 
+#[derive(PartialEq, Clone, Copy)]
 enum SelectedOption{
     PlayerXType,
     PlayerOType,
@@ -220,6 +212,24 @@ enum SelectedOption{
     AutoquitMode,
     AutoquitValue,
     GameMode
+}
+
+impl SelectedOption{
+    /// Returns an iterator over all SelectedOption variants
+    pub fn all() -> impl Iterator<Item = SelectedOption>
+    {
+        const ALL_OPTIONS: [SelectedOption; 7] = [
+            SelectedOption::PlayerXType,
+            SelectedOption::PlayerXAi,
+            SelectedOption::PlayerOType,
+            SelectedOption::PlayerOAi,
+            SelectedOption::AutoquitMode,
+            SelectedOption::AutoquitValue,
+            SelectedOption::GameMode
+            ];
+
+        ALL_OPTIONS.into_iter()
+    }
 }
 
 /// Menu option; allows user to configure some value
@@ -255,12 +265,6 @@ trait MenuOption {
     /// Returns true when the minimum value has been reached (i.e. calling prev_value will fail)
     fn at_minimum(&self) -> bool;
 
-}
-
-/// [MenuOption] with an added description of the currently selected value
-trait DescribedMenuOption: MenuOption {
-
-    /// Returns a description of the currently selected value
-    fn description(&self) -> String;
-
+    /// Optional description of the currently selected value
+    fn description(&self) -> Option<String>;
 }

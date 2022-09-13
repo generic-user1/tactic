@@ -107,7 +107,10 @@ impl UI{
     {
         let mut setup_menu = SetupMenu::new();
 
-        setup_menu.setup_menu_loop()?;
+        //set exit flag if user chooses to exit during menu
+        if !setup_menu.setup_menu_loop()? {
+            self.exit_flag = true;
+        }
 
         setup_menu.apply_settings(self);
 
