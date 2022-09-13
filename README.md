@@ -53,5 +53,7 @@ Play tic-tac-toe (a.k.a. "noughts and crosses" or "Xs and Os") in the terminal a
 
 ## Dependencies
 
+As a user, you likely won't have to worry about these as cargo will take care of downloading and building them for you.
+
 - [crossterm](https://github.com/crossterm-rs/crossterm)
 - [rand](https://github.com/rust-random/rand)
