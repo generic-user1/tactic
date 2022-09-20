@@ -1,6 +1,6 @@
 //! SetupMenu implementations for rendering and interaction
 
-use std::io::{stdout, Write};
+use std::{io::{stdout, Write}, convert::TryInto};
 
 use crossterm::{
     terminal::{Clear, ClearType, self},
@@ -34,10 +34,10 @@ impl super::SetupMenu {
             .queue(Clear(ClearType::All))?
             .flush()?;
 
-        let (mut term_x, mut term_y) = terminal::size()?;
+        (self.term_x, self.term_y) = terminal::size()?;
 
         let return_val = loop {
-            if term_x >= Self::TERMSIZE_MIN_X && term_y >= Self::TERMSIZE_MIN_Y {
+            if self.term_x >= Self::TERMSIZE_MIN_X && self.term_y >= Self::TERMSIZE_MIN_Y {
                 self.render_setup_menu()?;
             } else {
                 stdout()
@@ -51,8 +51,10 @@ impl super::SetupMenu {
                 Event::Resize(new_x,new_y) => {
                     //clear screen if resize is detected
                     stdout().execute(Clear(ClearType::All))?;
-                    term_x = new_x;
-                    term_y = new_y;
+                    let expanded = new_y > self.term_y;
+                    self.term_x = new_x;
+                    self.term_y = new_y;
+                    self.adjust_selection(expanded);
                 },
                 Event::Key(key_event) => match key_event {
                     KeyEvent{code: KeyCode::Char('c'), modifiers: KeyModifiers::CONTROL, ..} => {
@@ -194,32 +196,34 @@ impl super::SetupMenu {
             .queue(MoveToRow(0))?
             .flush()?;
 
-        for option in SelectedOption::all() {
-            
-            self.render_option(option)?;
-            stdout()
-                .queue(MoveToColumn(0))?
-                .queue(MoveToNextLine(1))?
-                .flush()?;
+        for (index, option) in SelectedOption::all().enumerate() {
+            let index: u16 = index.try_into().unwrap();
+            if index >= self.scroll_pos{
+                let offset_index = index.saturating_sub(self.scroll_pos);
+                if self.term_y > offset_index {
+                    self.render_option(option)?;
+                    stdout()
+                        .queue(MoveToColumn(0))?
+                        .queue(MoveToNextLine(1))?
+                        .flush()?;
 
-            //render description if needed
-            if let Some(option_desc) = self.get_option(option).description(){
-                stdout()
-                    .queue(Clear(ClearType::CurrentLine))?
-                    .queue(Print(option_desc))?
-                    .queue(MoveToColumn(0))?
-                    .queue(MoveToNextLine(1))?
-                    .flush()?;
+                    //only render description if there is space
+                    if self.term_y > offset_index+1{
+                        //render description if needed
+                        if let Some(option_desc) = self.get_option(option).description(){
+                            stdout()
+                                .queue(Clear(ClearType::CurrentLine))?
+                                .queue(Print(option_desc))?
+                                .queue(MoveToColumn(0))?
+                                .queue(MoveToNextLine(1))?
+                                .flush()?;
+                        }
+                    }
+                }
             }
         }
-
-        //advance one line if there is some space beyond the minimum
-        //do not advance if there isn't any space
-        let (_term_x, term_y) = terminal::size()?;
-        if term_y > Self::TERMSIZE_MIN_Y + 1 {
-            stdout().queue(MoveToNextLine(1))?;
-        }
         stdout()
+            .queue(MoveToNextLine(1))?
             .queue(Print("Use arrow keys to select options. Press Enter to accept or q to quit"))?
             .flush()?;
 
