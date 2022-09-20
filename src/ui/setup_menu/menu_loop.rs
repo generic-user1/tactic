@@ -211,7 +211,7 @@ impl super::SetupMenu {
                         .flush()?;
 
                     //only render description if there is space
-                    if self.term_y > offset_index+1{
+                    if self.term_y > offset_index+2{
                         //render description if needed
                         if let Some(option_desc) = self.get_option(option).description(){
                             stdout()
@@ -226,6 +226,7 @@ impl super::SetupMenu {
             }
         }
         stdout()
+            .queue(Clear(ClearType::CurrentLine))?
             .queue(MoveToNextLine(1))?
             .queue(Print("Use arrow keys to select options. Press Enter to accept or q to quit"))?
             .flush()?;

@@ -233,7 +233,7 @@ impl SetupMenu{
         } else if selected_option_index >= self.scroll_pos + 
             (self.term_y.saturating_sub(1+extra_height)){
             self.scroll_pos = selected_option_index.
-                saturating_sub(self.term_y.saturating_sub(2+extra_height));
+                saturating_sub(self.term_y.saturating_sub(3+extra_height));
         }
     }
 }
@@ -241,8 +241,8 @@ impl SetupMenu{
 #[derive(PartialEq, Clone, Copy)]
 enum SelectedOption{
     PlayerXType,
-    PlayerOType,
     PlayerXAi,
+    PlayerOType,
     PlayerOAi,
     AutoquitMode,
     AutoquitValue,
