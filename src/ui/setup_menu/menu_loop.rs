@@ -21,10 +21,6 @@ use super::{
     MenuOption
 };
 
-#[cfg(windows)]
-const WINDOWS: bool = true;
-#[cfg(not(windows))]
-const WINDOWS: bool = false;
 
 impl super::SetupMenu {
 
@@ -40,10 +36,6 @@ impl super::SetupMenu {
             .flush()?;
 
         (self.term_x, self.term_y) = terminal::size()?;
-        
-        if WINDOWS {
-            self.term_y +=1;
-        }
 
         let return_val = loop {
             if self.term_x >= Self::TERMSIZE_MIN_X && self.term_y >= Self::TERMSIZE_MIN_Y {
@@ -52,7 +44,7 @@ impl super::SetupMenu {
                 stdout()
                     .queue(MoveToColumn(0))?
                     .queue(MoveToRow(0))?
-                    .queue(Print("Terminal too small! Please enlarge terminal"))?
+                    .queue(Print(format!("Terminal too small ({} x {})! Please enlarge terminal", self.term_x, self.term_y)))?
                     .flush()?;
             }
 
@@ -60,12 +52,8 @@ impl super::SetupMenu {
                 Event::Resize(new_x,new_y) => {
                     //clear screen if resize is detected
                     stdout().execute(Clear(ClearType::All))?;
-                    let new_y = if WINDOWS{
-                            new_y + 1
-                        }
-                        else {
-                            new_y
-                        };
+                    #[cfg(windows)]
+                    let new_y = new_y + 1;
                     let expanded = new_y > self.term_y;
                     self.term_x = new_x;
                     self.term_y = new_y;
