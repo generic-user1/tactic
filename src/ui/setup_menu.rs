@@ -277,10 +277,7 @@ impl SelectedOption{
     /// Returns true if the given option has a description
     pub fn is_described(&self) -> bool
     {
-        match self {
-            SelectedOption::GameMode => true,
-            _ => false
-        }
+        matches!(self, SelectedOption::GameMode)
     }
 }
 
