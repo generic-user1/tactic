@@ -142,7 +142,7 @@ impl SetupMenu{
                 self.selected_option = SelectedOption::PlayerXType
             }
         }
-        self.adjust_selection(false);
+        self.adjust_scrolling(false);
     }
 
     /// Selects the previous option
@@ -183,7 +183,7 @@ impl SetupMenu{
                 }
             }
         }
-        self.adjust_selection(false);
+        self.adjust_scrolling(false);
     }
 
     /// Alter the given [UI] instance to match the settings of this `SetupMenu` 
@@ -221,12 +221,12 @@ impl SetupMenu{
 
     /// sets the scroll_pos so that the currently selected option is visible,
     /// and newly added space is utilized
-    fn adjust_selection(&mut self, expanded: bool)
+    fn adjust_scrolling(&mut self, expanded: bool)
     {   
         if expanded{
             self.scroll_pos = 0;
         }
-        let extra_height = if self.selected_option == SelectedOption::GameMode {1} else {0};
+        let extra_height = if self.selected_option.is_described() {1} else {0};
         let selected_option_index = self.selected_option.index();
         if selected_option_index < self.scroll_pos{
             self.scroll_pos = selected_option_index;
@@ -272,6 +272,15 @@ impl SelectedOption{
         Self::all().enumerate().find(
             |(_, option)|{option == self}
         ).unwrap().0.try_into().unwrap()
+    }
+
+    /// Returns true if the given option has a description
+    pub fn is_described(&self) -> bool
+    {
+        match self {
+            SelectedOption::GameMode => true,
+            _ => false
+        }
     }
 }
 

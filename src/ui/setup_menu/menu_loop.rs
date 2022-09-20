@@ -57,7 +57,7 @@ impl super::SetupMenu {
                     let expanded = new_y > self.term_y;
                     self.term_x = new_x;
                     self.term_y = new_y;
-                    self.adjust_selection(expanded);
+                    self.adjust_scrolling(expanded);
                 },
                 Event::Key(key_event) => match key_event {
                     KeyEvent{code: KeyCode::Char('c'), modifiers: KeyModifiers::CONTROL, ..} => {
