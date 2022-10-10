@@ -67,7 +67,7 @@ impl super::UI{
             } else {
                 // print error message instead of game board if terminal is too small
                 stdout()
-                    .execute(Print("Terminal too small! Please enlarge terminal"))?;
+                    .execute(Print(format!("Terminal too small ({} x {})! Please enlarge terminal", self.terminal_x_size, self.terminal_y_size)))?;
             }
 
             match self.active_player_type() {
