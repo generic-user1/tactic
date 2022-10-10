@@ -77,7 +77,7 @@ pub(super) struct SetupMenu {
 
 impl SetupMenu{
 
-    const TERMSIZE_MIN_X: u16 = 54;
+    const TERMSIZE_MIN_X: u16 = 68;
     const TERMSIZE_MIN_Y: u16 = super::UI::TERMSIZE_MIN_Y;
 
     /// Creates and returns a new SetupMenu
