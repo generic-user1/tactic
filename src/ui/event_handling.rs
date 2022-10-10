@@ -2,7 +2,7 @@
 
 use crossterm::{
     event::{self, Event, KeyEvent, KeyCode, KeyModifiers},
-    terminal::{Clear, ClearType},
+    terminal::{self, Clear, ClearType},
     ExecutableCommand
 };
 use crate::{
@@ -145,7 +145,9 @@ impl super::UI {
                     }
                 }
             },
-            Event::Resize(new_x, new_y) => {
+            //ignore size returned by resize event as it is currently (as of crossterm 0.25) wrong on Windows
+            Event::Resize(_,_) => {
+                let (new_x, new_y) = terminal::size()?;
                 self.terminal_x_size = new_x;
                 self.terminal_y_size = new_y;
                 stdout().execute(Clear(ClearType::All))?;

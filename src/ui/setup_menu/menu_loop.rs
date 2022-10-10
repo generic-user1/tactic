@@ -21,7 +21,6 @@ use super::{
     MenuOption
 };
 
-
 impl super::SetupMenu {
 
     /// Display menu until user submits choices
@@ -49,11 +48,11 @@ impl super::SetupMenu {
             }
 
             match event::read()? {
-                Event::Resize(new_x,new_y) => {
+                //ignore size returned by resize event as it is currently (as of crossterm 0.25) wrong on Windows
+                Event::Resize(_,_) => {
                     //clear screen if resize is detected
                     stdout().execute(Clear(ClearType::All))?;
-                    #[cfg(windows)]
-                    let new_y = new_y + 1;
+                    let (new_x, new_y) = terminal::size()?;
                     let expanded = new_y > self.term_y;
                     self.term_x = new_x;
                     self.term_y = new_y;
